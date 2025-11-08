@@ -1,0 +1,7 @@
+apscheduler==3.11.1
+Flask_MySQLdb==2.0.0
+Markdown==3.7
+Pillow==12.0.0
+protobuf==6.33.0
+python-dotenv==1.2.1
+Requests==2.32.5

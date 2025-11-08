@@ -1,0 +1,500 @@
+        body {
+            background: #fff;
+            min-height: 100vh;
+            /* padding: 40px 20px; */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Decorative circles inspired by LearnTrail */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -100px;
+            right: -100px;
+            width: 400px;
+            height: 400px;
+            background: #FEC320;
+            opacity: 0.1;
+            border-radius: 50%;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -150px;
+            left: -150px;
+            width: 500px;
+            height: 500px;
+            background: #FEC320;
+            opacity: 0.08;
+            border-radius: 50%;
+            z-index: 0;
+        }
+
+        .content-wrapper {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            max-width: 1100px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        .form-container,
+        .output-container {
+            flex: 1 1 45%;
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .form-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: #FEC320 ;
+        }
+
+        .output-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: #FEC320;
+        }
+
+        h1 {
+            background: linear-gradient(135deg, #125578 0%, #0a3a52 100%);
+            text-align: center;
+            color: white;
+            padding: 20px;
+            margin-bottom: 40px;
+            border-radius: 16px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #125578, #0a3a52);
+            border: 2px solid #0a3a52;
+            font-weight: 600;
+            padding: 12px 35px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);  
+        }
+
+        .output-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .output-content {
+            white-space: pre-wrap;
+            line-height: 1.75;
+            color: #222;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 14px;
+            overflow-y: auto;
+            max-height: 480px;
+            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+            font-size: 15.5px;
+            box-shadow: inset 0 0 8px rgba(18, 85, 120, 0.1);
+            border: 2px solid #e2e6ea;
+        }
+
+        .output-content h3,
+        .output-content h4 {
+            color: #125578;
+            font-weight: 700;
+            margin-top: 16px;
+        }
+
+        .output-content strong {
+            color: #125578;
+            font-weight: 600;
+        }
+
+        .output-content ul,
+        .output-content ol {
+            margin-left: 20px;
+        }
+
+        .output-content li {
+            margin-bottom: 8px;
+        }
+
+        .output-content p {
+            margin-bottom: 12px;
+        }
+
+        .output-content code {
+            background: #eef2f7;
+            padding: 2px 4px;
+            border-radius: 5px;
+            font-size: 90%;
+            font-family: monospace;
+        }
+
+        .output-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .output-content::-webkit-scrollbar-thumb {
+            background: #FEC320;
+            border-radius: 10px;
+        }
+
+        .output-content::-webkit-scrollbar-thumb:hover {
+            background: #f5b800;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        /* New Loader Styles */
+        .loader {
+            width: 48px;
+            height: 48px;
+            margin: auto;
+            position: relative;
+        }
+
+        .loader:before {
+            content: '';
+            width: 48px;
+            height: 5px;
+            background: #FEC32050;
+            position: absolute;
+            top: 60px;
+            left: 0;
+            border-radius: 50%;
+            animation: shadow324 0.5s linear infinite;
+        }
+
+        .loader:after {
+            content: '';
+            width: 100%;
+            height: 100%;
+            background: #FEC320;
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-radius: 4px;
+            animation: jump7456 0.5s linear infinite;
+        }
+
+        @keyframes jump7456 {
+            15% {
+                border-bottom-right-radius: 3px;
+            }
+            25% {
+                transform: translateY(9px) rotate(22.5deg);
+            }
+            50% {
+                transform: translateY(18px) scale(1, .9) rotate(45deg);
+                border-bottom-right-radius: 40px;
+            }
+            75% {
+                transform: translateY(9px) rotate(67.5deg);
+            }
+            100% {
+                transform: translateY(0) rotate(90deg);
+            }
+        }
+
+        @keyframes shadow324 {
+            0%,
+            100% {
+                transform: scale(1, 1);
+            }
+            50% {
+                transform: scale(1.2, 1);
+            }
+        }
+
+        .fw-bold {
+            color: #125578;
+        }
+
+        label.fw-semibold {
+            color: #125578;
+            font-weight: 600;
+        }
+
+        .form-select:focus,
+        .form-control:focus {
+            border-color: #FEC320;
+            box-shadow: 0 0 0 0.2rem rgba(254, 195, 32, 0.25);
+        }
+
+        .form-select,
+        .form-control {
+            transition: all 0.2s;
+            border: 2px solid #dee2e6;
+        }
+
+        .form-select:hover,
+        .form-control:hover {
+            border-color: #FEC320;
+        }
+
+        select.form-select option {
+            background-color: white;
+            color: #000;
+        }
+
+        select.form-select option:checked {
+            background-color: #FEC320;
+        }
+
+        @media (max-width: 900px) {
+            .content-wrapper {
+                flex-direction: column;
+            }
+            
+            body::before,
+            body::after {
+                display: none;
+            }
+        }
+
+        /* Phone Size Screens - Max width 768px */
+@media (max-width: 768px) {
+    body {
+        padding: 15px 12px; /* Increased horizontal padding */
+        background: #f8f9fa;
+    }
+
+    .content-wrapper {
+        flex-direction: column;
+        gap: 20px;
+        padding: 0 8px; /* Added horizontal padding to wrapper */
+    }
+
+    .form-container,
+    .output-container {
+        flex: 1 1 100%;
+        padding: 20px 18px; /* Increased horizontal padding */
+        border-radius: 12px;
+        margin: 0 5px; /* Small margin to prevent edge touching */
+    }
+
+    h1 {
+        font-size: 1.8rem;
+        margin-bottom: 30px;
+        text-align: center;
+        padding: 15px 15px; /* Added horizontal padding to heading */
+    }
+
+    .form-select, 
+    .form-control {
+        padding: 12px 15px; /* Consistent horizontal padding */
+        font-size: 16px;
+        margin: 0 2px; /* Small margin to prevent edge issues */
+    }
+
+    textarea.form-control {
+        min-height: 120px;
+    }
+
+    .btn-primary {
+        width: calc(100% - 10px); /* Account for margins */
+        padding: 14px;
+        font-size: 1.1rem;
+        margin: 0 5px; /* Center the button */
+    }
+
+    .btn-outline-primary {
+        width: calc(100% - 10px);
+        margin: 10px 5px 0 5px; /* Consistent margins */
+    }
+
+    .output-content {
+        max-height: 400px;
+        padding: 15px;
+        font-size: 14px;
+        margin: 0 2px; /* Small margin for consistency */
+    }
+
+    .output-content h1 { font-size: 1.5em; }
+    .output-content h2 { font-size: 1.3em; }
+    .output-content h3 { font-size: 1.2em; }
+    .output-content h4 { font-size: 1.1em; }
+
+    .output-content ul,
+    .output-content ol {
+        margin-left: 15px;
+        padding-left: 5px;
+    }
+
+    .loading {
+        padding: 15px;
+    }
+
+    /* Ensure form elements don't touch screen edges */
+    .form-container > *,
+    .output-container > * {
+        padding-left: 2px;
+        padding-right: 2px;
+    }
+}
+
+/* Small Phones - Max width 480px */
+@media (max-width: 480px) {
+    body {
+        padding: 12px 10px; /* Maintain good horizontal padding */
+    }
+
+    .content-wrapper {
+        padding: 0 5px;
+    }
+
+    .form-container,
+    .output-container {
+        padding: 18px 15px; /* Maintain adequate horizontal padding */
+        border-radius: 10px;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+        padding: 15px 50px;
+    }
+
+    .form-label {
+        font-size: 0.9rem;
+        padding: 0 3px; /* Small padding for labels */
+    }
+
+    .form-select, 
+    .form-control {
+        padding: 12px 12px; /* Consistent padding */
+    }
+
+    .output-content {
+        max-height: 350px;
+        padding: 12px;
+        font-size: 13px;
+    }
+
+    .output-content h1 { font-size: 1.3em; }
+    .output-content h2 { font-size: 1.2em; }
+    .output-content h3 { font-size: 1.1em; }
+
+    .empty-state {
+        padding: 30px 15px;
+        font-size: 0.9rem;
+    }
+
+    .btn-primary,
+    .btn-outline-primary {
+        padding: 12px;
+        font-size: 1rem;
+    }
+}
+
+/* Very Small Phones - Max width 360px */
+@media (max-width: 360px) {
+    body {
+        padding: 10px 8px; /* Still maintain horizontal padding */
+    }
+
+    .content-wrapper {
+        gap: 15px;
+        padding: 0 3px;
+    }
+
+    .form-container,
+    .output-container {
+        padding: 15px 12px; /* Reduced but still adequate padding */
+    }
+
+    h1 {
+        font-size: 1.3rem;
+        padding: 10px 10px;
+    }
+
+    .output-content {
+        max-height: 300px;
+        font-size: 12px;
+        padding: 10px;
+    }
+
+    .form-select, 
+    .form-control {
+        padding: 10px 10px;
+        font-size: 14px;
+    }
+
+    .btn-primary,
+    .btn-outline-primary {
+        width: calc(100% - 8px);
+        margin: 0 4px;
+    }
+}
+
+/* Extra padding for very small screens to prevent edge touching */
+@media (max-width: 320px) {
+    body {
+        padding: 8px 6px;
+    }
+    
+    .form-container,
+    .output-container {
+        padding: 12px 10px;
+    }
+}
+
+/* Landscape Orientation for Phones */
+@media (max-width: 768px) and (orientation: landscape) {
+    .output-content {
+        max-height: 250px;
+    }
+    
+    body {
+        padding: 10px 12px;
+    }
+    
+    .form-container,
+    .output-container {
+        padding: 15px 18px;
+    }
+}
+
+/* Fix for iOS Safari specific issues */
+@supports (-webkit-touch-callout: none) {
+    @media (max-width: 768px) {
+        .form-select, 
+        .form-control {
+            font-size: 16px;
+            padding-left: 12px; /* Ensure consistent padding on iOS */
+            padding-right: 12px;
+        }
+    }
+}

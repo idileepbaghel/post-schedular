@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">📝 Preview Saved Posts</h2>
+
+  {% if posts %}
+    {% for post in posts %}
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <strong>Scheduled for {{ post.date }}</strong>
+        <span class="badge bg-light text-dark">Post #{{ post.id }}</span>
+      </div>
+      <div class="card-body">
+        <!-- HTML Preview -->
+        <div class="mb-3">
+          <label class="form-label fw-bold">HTML Preview:</label>
+          <div class="border rounded p-3 bg-light">
+            {{ post.html|safe }}
+          </div>
+        </div>
+
+        <!-- Post to LinkedIn Button -->
+        <div class="text-end mt-3">
+          <form method="POST" action="{{ url_for('post_to_linkedin') }}" class="d-inline">
+            <input type="hidden" name="content" value="{{ post.html }}">
+            <input type="hidden" name="post_id" value="{{ post.id }}">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-linkedin"></i> Post to LinkedIn
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+    <div class="text-center mt-4">
+      <a href="{{ url_for('view_posts') }}" class="btn btn-secondary me-2">
+        <i class="bi bi-table"></i> View All Posts
+      </a>
+      <a href="{{ url_for('generate_text') }}" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> Generate More Content
+      </a>
+    </div>
+  {% else %}
+    <div class="alert alert-info">
+      <i class="bi bi-info-circle"></i> No posts to preview.
+      <a href="{{ url_for('generate_text') }}" class="alert-link">Generate some content</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

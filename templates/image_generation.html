@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gemini Image Generator</title>
+  <style>
+    body {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      color: white;
+      font-family: 'Poppins', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+      animation: bgMove 10s infinite alternate ease-in-out;
+    }
+
+    @keyframes bgMove {
+      from { background-position: left; }
+      to { background-position: right; }
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+      text-shadow: 0 0 10px #00bcd4;
+    }
+
+    form {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      border-radius: 15px;
+      backdrop-filter: blur(10px);
+      text-align: center;
+      animation: fadeIn 2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      width: 300px;
+      border: none;
+      border-radius: 8px;
+      outline: none;
+      font-size: 1rem;
+    }
+
+    button {
+      margin-top: 10px;
+      background: #00bcd4;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.3s ease;
+    }
+
+    button:hover {
+      background: #0097a7;
+      transform: scale(1.1);
+    }
+
+    .image-container {
+      margin-top: 20px;
+      animation: fadeIn 1.5s ease;
+    }
+
+    .image-container img {
+      max-width: 500px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px #00bcd4;
+      animation: pop 0.6s ease-in-out;
+    }
+
+    @keyframes pop {
+      from { transform: scale(0.8); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .error {
+      color: #ff5252;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎨 Gemini Image Generator</h1>
+  <form action="/generate_image" method="POST">
+    <input type="text" name="prompt" placeholder="Type your image prompt here..." required>
+    <br>
+    <button type="submit">Generate</button>
+  </form>
+
+  {% if image_data %}
+    <div class="image-container">
+      <h3>✨ Generated Image for: <em>{{ prompt }}</em></h3>
+      <img src="data:image/png;base64,{{ image_data }}" alt="Generated Image">
+    </div>
+  {% elif error %}
+    <p class="error">{{ error }}</p>
+  {% endif %}
+</body>
+</html>

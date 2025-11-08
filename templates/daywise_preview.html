@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+  .daywise-content-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  }
+
+  .header-banner {
+    background: linear-gradient(135deg, #0f5f7a 0%, #1a8ba8 100%);
+    border-radius: 16px;
+    padding: 30px 40px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 24px rgba(15, 95, 122, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .header-banner h2 {
+    color: white;
+    font-size: 32px;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .robot-icon {
+    background: white;
+    border-radius: 12px;
+    padding: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    font-size: 28px;
+  }
+
+  .content-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    margin-bottom: 24px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .content-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+  }
+
+  .card-header-custom {
+    background: linear-gradient(135deg, #0f5f7a 0%, #1a8ba8 100%);
+    color: white;
+    padding: 20px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .char-count {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .card-body-custom {
+    background-color: #f9fafb;
+    padding: 24px 30px;
+  }
+
+  textarea.form-control {
+    font-family: "Segoe UI", sans-serif;
+    font-size: 15px;
+    color: #333;
+    border-radius: 10px;
+    border: 1px solid #e1e8ed;
+    resize: vertical;
+    background-color: #ffffff;
+    line-height: 1.6;
+    padding: 16px;
+    transition: all 0.2s ease;
+  }
+
+  textarea.form-control:focus {
+    outline: none;
+    border-color: #1a8ba8;
+    box-shadow: 0 0 0 3px rgba(26, 139, 168, 0.1);
+  }
+
+  .btn-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 32px;
+    flex-wrap: wrap;
+  }
+
+  .btn-custom {
+    padding: 14px 32px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary-custom {
+    background: linear-gradient(135deg, #0f5f7a 0%, #1a8ba8 100%);
+    color: white;
+  }
+
+  .btn-primary-custom:hover {
+    background: linear-gradient(135deg, #0a4a5e 0%, #0f5f7a 100%);
+    transform: scale(1.05);
+  }
+
+  .btn-success-custom {
+    background: #10a37f;
+    color: white;
+  }
+
+  .btn-success-custom:hover {
+    background: #0d8a6a;
+    transform: scale(1.05);
+  }
+
+  .btn-secondary-custom {
+    background: #6c757d;
+    color: white;
+    margin-top: 16px;
+  }
+
+  .btn-secondary-custom:hover {
+    background: #5a6268;
+    transform: scale(1.05);
+  }
+
+  .back-link {
+    text-align: center;
+    margin-top: 20px;
+  }
+
+  .alert-custom {
+    background: white;
+    border: 2px solid #1a8ba8;
+    border-radius: 12px;
+    padding: 24px;
+    color: #0f5f7a;
+    font-size: 16px;
+    text-align: center;
+  }
+
+  @media (max-width: 768px) {
+    .daywise-content-container {
+      padding: 15px;
+    }
+
+    .header-banner {
+      padding: 20px 25px;
+    }
+
+    .header-banner h2 {
+      font-size: 24px;
+    }
+
+    .card-header-custom {
+      padding: 15px 20px;
+      font-size: 16px;
+      flex-direction: column;
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    .card-body-custom {
+      padding: 18px 20px;
+    }
+
+    .btn-actions {
+      flex-direction: column;
+    }
+
+    .btn-custom {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="position-fixed top-0 end-0 p-3" style="z-index: 11;">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+<div class="daywise-content-container">
+  <div class="header-banner">
+    <span class="robot-icon">🤖</span>
+    <h2>📅 Generated Day-wise Content</h2>
+  </div>
+
+  {% if daywise_content %}
+  <form method="POST" action="{{ url_for('save_schedule') }}">
+    {% for day in daywise_content %}
+    <div class="content-card">
+      <div class="card-header-custom">
+        <strong>{{ day.date }}</strong>
+        <small class="char-count">{{ (day.text | length) }} / 3000 chars</small>
+      </div>
+
+      <div class="card-body-custom">
+        <textarea name="post_content_{{ loop.index }}" 
+                  class="form-control" 
+                  rows="8">{{ day.text }}</textarea>
+        <input type="hidden" name="post_date_{{ loop.index }}" value="{{ day.date }}">
+      </div>
+    </div>
+    {% endfor %}
+
+    <input type="hidden" name="total_posts" value="{{ daywise_content|length }}">
+
+    <div class="btn-actions">
+      <button type="submit" class="btn-custom btn-primary-custom">
+        💾 Save Schedule
+      </button>
+      <a href="{{ url_for('view_posts') }}" class="btn-custom btn-success-custom">
+        📂 View Saved Posts
+      </a>
+    </div>
+  </form>
+
+  <div class="back-link">
+    <a href="{{ url_for('generate_text') }}" class="btn-custom btn-secondary-custom">
+      ← Back to Generator
+    </a>
+  </div>
+
+  {% else %}
+  <div class="alert-custom">No content found. Please generate some first.</div>
+  {% endif %}
+</div>
+
+{% endblock %}
