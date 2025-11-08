@@ -203,6 +203,52 @@ def linkedin_callback():
                     print(f"[WARNING] Could not persist linkedin token to DB: {e}")
         else:
             print(f"[WARNING] Failed to fetch user profile. Code: {profile_response.status_code}")
+            # Try to extract user info from id_token as fallback
+            id_token = token_data.get('id_token')
+            if id_token:
+                try:
+                    import json, base64
+                    # Split the token and get the payload part
+                    parts = id_token.split('.')
+                    if len(parts) >= 2:
+                        payload = parts[1]
+                        # Add padding if needed
+                        padding = 4 - (len(payload) % 4)
+                        if padding != 4:
+                            payload += '=' * padding
+                        
+                        decoded = base64.urlsafe_b64decode(payload)
+                        token_data = json.loads(decoded)
+                        print(f"[DEBUG] Decoded id_token payload: {token_data}")
+                        
+                        # Try to get user ID from token
+                        user_sub = token_data.get('sub')
+                        if user_sub:
+                            print(f"[DEBUG] Found user ID in id_token: {user_sub}")
+                            session["linkedin_user_urn"] = user_sub
+                            try:
+                                cur = mysql.connection.cursor()
+                                cur.execute("SELECT id FROM linkedin_tokens WHERE user_urn=%s", (user_sub,))
+                                existing = cur.fetchone()
+                                if existing:
+                                    cur.execute("""
+                                        UPDATE linkedin_tokens
+                                        SET access_token=%s, updated_by='System', updated_date=NOW()
+                                        WHERE user_urn=%s
+                                    """, (access_token, user_sub))
+                                else:
+                                    cur.execute("""
+                                        INSERT INTO linkedin_tokens 
+                                        (user_urn, access_token, added_by, added_date)
+                                        VALUES (%s, %s, 'System', NOW())
+                                    """, (user_sub, access_token))
+                                mysql.connection.commit()
+                                cur.close()
+                                print(f"[DEBUG] Saved linkedin token from id_token for user_urn={user_sub}")
+                            except Exception as e:
+                                print(f"[WARNING] Could not save token from id_token: {e}")
+                except Exception as e:
+                    print(f"[WARNING] Could not decode id_token: {e}")
 
     except Exception as e:
         print(f"[ERROR] Exception during profile fetch: {e}")
@@ -387,12 +433,21 @@ def add_post():
 # -------------------------------
 @app.route('/save_schedule', methods=['POST'])
 def save_schedule():
+    print("\n=== [DEBUG] /save_schedule ROUTE CALLED ===")
+    print(f"[DEBUG] Session keys: {list(session.keys())}")
+    
     if 'linkedin_token' not in session:
         flash("🔗 Please connect to LinkedIn first.", "warning")
         return redirect(url_for('linkedin_login'))
     
+    # Get author_urn from session
     author_urn = session.get('linkedin_user_urn')
     print(f"[DEBUG] Author URN for saved posts: {author_urn}")
+    
+    if not author_urn:
+        print("[WARNING] No author_urn in session")
+        flash("⚠️ LinkedIn user ID not found. Please reconnect to LinkedIn.", "warning")
+        return redirect(url_for('linkedin_login'))
 
     total_posts = int(request.form.get('total_posts', 0))
     added_by = "AI Generator"
@@ -403,14 +458,21 @@ def save_schedule():
         post_content = request.form.get(f'post_content_{i}')
 
         if post_date and post_content:
-            cursor = mysql.connection.cursor()
-            cursor.execute("""
-                INSERT INTO scheduled_posts (post_date, content, added_by)
-                VALUES (%s, %s, %s)
-            """, (post_date, post_content.strip(), added_by))
-            mysql.connection.commit()
-            cursor.close()
-            saved_count += 1
+            try:
+                cursor = mysql.connection.cursor()
+                cursor.execute("""
+                    INSERT INTO scheduled_posts 
+                    (post_date, content, added_by, author_urn, posted, added_date, updated_by, updated_date)
+                    VALUES (%s, %s, %s, %s, %s, NOW(), NULL, NULL)
+                """, (post_date, post_content.strip(), added_by, author_urn, 0))
+                mysql.connection.commit()
+                cursor.close()
+                saved_count += 1
+                print(f"[DEBUG] Saved post with author_urn={author_urn}")
+            except Exception as e:
+                print(f"[ERROR] Failed to save post: {e}")
+                flash(f"❌ Error saving post: {str(e)}", "danger")
+                continue
 
     flash(f"✅ {saved_count} post(s) saved successfully!", "success")
     return redirect(url_for('view_posts'))
