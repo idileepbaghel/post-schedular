@@ -397,8 +397,6 @@ def generate_text():
 
     return render_template('text_generation.html')
 
-
-
 # -------------------------------
 # ROUTE: Add a new scheduled post
 # -------------------------------
