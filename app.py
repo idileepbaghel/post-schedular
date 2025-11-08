@@ -627,7 +627,7 @@ def post_to_linkedin():
                 }
             },
             "visibility": {
-                "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
+                "com.linkedin.ugc.MemberNetworkVisibility": "CONNECTIONS"
             }
         }
         
