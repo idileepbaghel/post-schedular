@@ -1,46 +1,308 @@
 {% extends 'base.html' %}
 {% block content %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+
+<style>
+  /* Decorative circles inspired by LearnTrail */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -100px;
+    right: -100px;
+    width: 400px;
+    height: 400px;
+    background: #FEC320;
+    opacity: 0.1;
+    border-radius: 50%;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -150px;
+    left: -150px;
+    width: 500px;
+    height: 500px;
+    background: #FEC320;
+    opacity: 0.08;
+    border-radius: 50%;
+    z-index: 0;
+  }
+
+  .form-container {
+    background: white;
+    border-radius: 24px;
+    padding: 40px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  }
+
+  .form-container {
+    flex: 1 1 45%;
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .form-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: #FEC320;
+  }
+
+
+  .form-label-modern {
+    color: #4c4e53;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .form-control-modern {
+    background: #f3f4f6 !important;
+    /* border: none !important; */
+    border-radius: 12px !important;
+    padding: 14px 16px !important;
+    font-size: 15px;
+    transition: all 0.3s ease;
+  }
+
+  .form-select-modern {
+    background: #f3f4f6;
+    /* border: 1px solid #f3f4f6; */
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 15px;
+    /* font-weight: 500; */
+    color: #50545f;
+    appearance: none;
+    /* background-image: url("data:image/svg+xml,%3Csvg fill='%239ca3af' height='18' viewBox='0 0 20 20' width='18' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5.516 7.548a.625.625 0 0 1 .884-.884L10 10.263l3.6-3.6a.625.625 0 1 1 .884.884l-4.042 4.042a.625.625 0 0 1-.884 0L5.516 7.548z'/%3E%3C/svg%3E"); */
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-size: 14px;
+  }
+
+
+  .form-control-modern:focus,
+  .form-select-modern:focus {
+    background: #e5e7eb !important;
+    box-shadow: none !important;
+    /* border: none !important; */
+    outline: none !important;
+  }
+
+  .form-control-modern::placeholder {
+    color: #9ca3af;
+  }
+
+  .btn-checkout {
+    background: linear-gradient(135deg, #125578 0%, #0a3a52 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 28px;
+    font-size: 16px;
+    font-weight: 600;
+    width: auto;
+    transition: all 0.3s ease;
+    display: inline-block;
+  }
+
+  .btn-checkout:hover:not(:disabled) {
+    background: #374151;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .btn-checkout:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .loading {
+    display: none;
+    text-align: center;
+    margin-top: 20px;
+  }
+
+
+
+  /* New Loader Styles */
+  .loader {
+    width: 48px;
+    height: 48px;
+    margin: auto;
+    position: relative;
+  }
+
+  .loader:before {
+    content: '';
+    width: 48px;
+    height: 5px;
+    background: #FEC32050;
+    position: absolute;
+    top: 60px;
+    left: 0;
+    border-radius: 50%;
+    animation: shadow324 0.5s linear infinite;
+  }
+
+  .loader:after {
+    content: '';
+    width: 100%;
+    height: 100%;
+    background: #FEC320;
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: 4px;
+    animation: jump7456 0.5s linear infinite;
+  }
+
+  @keyframes jump7456 {
+    15% {
+      border-bottom-right-radius: 3px;
+    }
+
+    25% {
+      transform: translateY(9px) rotate(22.5deg);
+    }
+
+    50% {
+      transform: translateY(18px) scale(1, .9) rotate(45deg);
+      border-bottom-right-radius: 40px;
+    }
+
+    75% {
+      transform: translateY(9px) rotate(67.5deg);
+    }
+
+    100% {
+      transform: translateY(0) rotate(90deg);
+    }
+  }
+
+  @keyframes shadow324 {
+
+    0%,
+    100% {
+      transform: scale(1, 1);
+    }
+
+    50% {
+      transform: scale(1.2, 1);
+    }
+  }
+
+  h1 {
+    background: linear-gradient(135deg, #125578 0%, #0a3a52 100%);
+    text-align: center;
+    color: white;
+    padding: 20px;
+    margin-bottom: 40px;
+    border-radius: 16px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 1;
+  }
+
+  .fw-bold {
+    color: #125578;
+  }
+
+  label.fw-semibold {
+    color: #125578;
+    font-weight: 600;
+  }
+
+  .form-select:focus,
+  .form-control:focus {
+    border-color: #FEC320;
+    box-shadow: 0 0 0 0.2rem rgba(254, 195, 32, 0.25);
+  }
+
+  .form-select,
+  .form-control {
+    transition: all 0.2s;
+    border: 2px solid #dee2e6;
+  }
+
+  .form-select:hover,
+  .form-control:hover {
+    border-color: #FEC320;
+  }
+
+  select.form-select option {
+    background-color: white;
+    color: #000;
+  }
+
+  select.form-select option:checked {
+    background-color: #FEC320;
+  }
+
+  @media (max-width: 900px) {
+    .content-wrapper {
+      flex-direction: column;
+    }
+
+    body::before,
+    body::after {
+      display: none;
+    }
+  }
+</style>
 
 <div class="container-fluid d-flex flex-column align-items-center">
 
   {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="position-fixed top-0 end-0 p-3" style="z-index: 11;">
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-        {% endfor %}
-      </div>
-    {% endif %}
+  {% if messages %}
+  <div class="position-fixed top-0 end-0 p-3" style="z-index: 11;">
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
   {% endwith %}
 
-  <h1 class="fw-bold text-white">🤖 AI LinkedIn Content Generator</h1>
+  <div class="header-section text-center mb-4">
+    <h1 class="header-title">Content Generator</h1>
 
-  <!-- LinkedIn Status -->
-  <div class="mb-3">
-    {% if session.get('linkedin_token') %}
+    <!-- LinkedIn Status -->
+    <!-- <div class="mt-3">
+      {% if session.get('linkedin_token') %}
       <span class="badge bg-success fs-6 px-3 py-2">
         <i class="bi bi-check-circle"></i> Connected as {{ session.get('linkedin_user', 'User') }}
       </span>
-    {% else %}
-      <a href="{{ url_for('linkedin_login') }}" class="btn btn-outline-dark">
+      {% else %}
+      <a href="{{ url_for('linkedin_login') }}" class="btn btn-outline-light btn-lg">
         <i class="bi bi-linkedin"></i> Connect to LinkedIn
       </a>
-    {% endif %}
+      {% endif %}
+    </div> -->
   </div>
 
   <div class="content-wrapper">
     <div class="form-container">
       <form method="POST" action="{{ url_for('generate_text') }}" id="textForm">
-        
+
         <!-- Content Controls -->
-        <div class="row">
-          <div class="col-md-6 mb-3">
-            <label class="fw-semibold">Content Length<span class="text-danger">*</span></label>
-            <select name="content_length" class="form-select border-2" required>
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label class="form-label-modern">Content Length<span class="text-danger">*</span></label>
+            <select name="content_length" class="form-select form-select-modern" required>
               <option value="" disabled selected>Choose length...</option>
               <option>Short</option>
               <option>Medium</option>
@@ -48,10 +310,11 @@
             </select>
           </div>
 
-          <div class="col-md-6 mb-3">
-            <label class="fw-semibold">Content Schedule<span class="text-danger">*</span></label>
-            <select name="content_schedule" class="form-select border-2" required>
+          <div class="col-md-4">
+            <label class="form-label-modern">Content Schedule<span class="text-danger">*</span></label>
+            <select name="content_schedule" class="form-select form-select-modern" required>
               <option value="" disabled selected>Choose schedule...</option>
+              <option>Single Day</option>
               <option>2 Days</option>
               <option>5 Days</option>
               <option>10 Days</option>
@@ -59,118 +322,111 @@
               <option>2 Weeks</option>
             </select>
           </div>
-        </div>
 
-        <!-- Dates -->
-        <div class="row mt-2">
-          <div class="col-md-6 mb-3">
-            <label class="fw-semibold">Start Date<span class="text-danger">*</span></label>
-            <input type="date" name="start_date" class="form-control" required>
-          </div>
-
-          <div class="col-md-6 mb-3">
-            <label class="fw-semibold">Number of Days<span class="text-danger">*</span></label>
-            <input type="number" name="num_days" min="1" max="30" class="form-control" value="1" required>
+          <div class="col-md-4">
+            <label class="form-label-modern">Start Date<span class="text-danger">*</span></label>
+            <input type="date" name="start_date" class="form-control form-control-modern" required>
           </div>
         </div>
 
-        <!-- Core Inputs with Dropdowns -->
-       <div class="row mt-3">
-          <div class="mb-3 col-md-6">
-            <label class="fw-semibold">Topic / Context<span class="text-danger">*</span></label>
-            <select class="form-select border-2" name="topic_context" required>
-              <option value="" disabled {% if not topic_context %}selected{% endif %}>Choose topic...</option>
-              <option {% if topic_context == 'AI training program for students and teachers' %}selected{% endif %}>AI training program for students and teachers</option>
-              <option {% if topic_context == 'My career milestone' %}selected{% endif %}>My career milestone</option>
-              <option {% if topic_context == 'A lesson I learned as a leader' %}selected{% endif %}>A lesson I learned as a leader</option>
-              <option {% if topic_context == 'Product announcement' %}selected{% endif %}>Product announcement</option>
-              <option {% if topic_context == 'Event recap' %}selected{% endif %}>Event recap</option>
-              <option {% if topic_context == 'Thought leadership' %}selected{% endif %}>Thought leadership</option>
+        <!-- Purpose / Audience / Tone / Formatting -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-3">
+            <label class="form-label-modern">Purpose / Goal<span class="text-danger">*</span></label>
+            <select class="form-select form-select-modern" name="purpose_goal" required>
+              <option value="" disabled selected>Choose purpose...</option>
+              <option>Awareness</option>
+              <option>Engagement</option>
+              <option>Leads</option>
+              <option>Inspiration</option>
+              <option>Recruitment</option>
+              <option>Announcement</option>
+              <option>Thought leadership</option>
             </select>
           </div>
 
-          <div class="mb-3 col-md-6">
-            <label class="fw-semibold">Purpose / Goal<span class="text-danger">*</span></label>
-            <select class="form-select border-2" name="purpose_goal" required>
-              <option value="" disabled {% if not purpose_goal %}selected{% endif %}>Choose purpose...</option>
-              <option {% if purpose_goal == 'Awareness' %}selected{% endif %}>Awareness</option>
-              <option {% if purpose_goal == 'Engagement' %}selected{% endif %}>Engagement</option>
-              <option {% if purpose_goal == 'Leads' %}selected{% endif %}>Leads</option>
-              <option {% if purpose_goal == 'Inspiration' %}selected{% endif %}>Inspiration</option>
-              <option {% if purpose_goal == 'Recruitment' %}selected{% endif %}>Recruitment</option>
-              <option {% if purpose_goal == 'Announcement' %}selected{% endif %}>Announcement</option>
-              <option {% if purpose_goal == 'Thought leadership' %}selected{% endif %}>Thought leadership</option>
+          <div class="col-md-3">
+            <label class="form-label-modern">Target Audience<span class="text-danger">*</span></label>
+            <select class="form-select form-select-modern" name="target_audience" required>
+              <option value="" disabled selected>Choose audience...</option>
+              <option>Students</option>
+              <option>Educators</option>
+              <option>Professionals</option>
+              <option>Recruiters</option>
+              <option>Corporate leaders</option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label-modern">Tone of Voice<span class="text-danger">*</span></label>
+            <select class="form-select form-select-modern" name="tone_of_voice" required>
+              <option value="" disabled selected>Choose tone...</option>
+              <option>Professional</option>
+              <option>Inspiring</option>
+              <option>Humble</option>
+              <option>Conversational</option>
+              <option>Storytelling</option>
+              <option>Promotional</option>
+              <option>Thought-provoking</option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label-modern">Formatting Preference</label>
+            <select name="formatting" class="form-select form-select-modern">
+              <option value="" disabled selected>Select format</option>
+              <option>Short & Punchy</option>
+              <option>Story Format</option>
+              <option>Professional Announcement</option>
+              <option>Carousel-Friendly</option>
+              <option>Listicle</option>
             </select>
           </div>
         </div>
 
-        <div class="row">
-          <div class="row">
-          <div class="mb-3 col-md-6">
-            <label class="fw-semibold">Target Audience<span class="text-danger">*</span></label>
-            <select class="form-select border-2" name="target_audience" required>
-              <option value="" disabled {% if not target_audience %}selected{% endif %}>Choose audience...</option>
-              <option {% if target_audience == 'Students' %}selected{% endif %}>Students</option>
-              <option {% if target_audience == 'Educators' %}selected{% endif %}>Educators</option>
-              <option {% if target_audience == 'Professionals' %}selected{% endif %}>Professionals</option>
-              <option {% if target_audience == 'Recruiters' %}selected{% endif %}>Recruiters</option>
-              <option {% if target_audience == 'Corporate leaders' %}selected{% endif %}>Corporate leaders</option>
-            </select>
-          </div>
-
-          <div class="mb-3 col-md-6">
-            <label class="fw-semibold">Tone of Voice<span class="text-danger">*</span></label>
-            <select class="form-select border-2" name="tone_of_voice" required>
-              <option value="" disabled {% if not tone_of_voice %}selected{% endif %}>Choose tone...</option>
-              <option {% if tone_of_voice == 'Professional' %}selected{% endif %}>Professional</option>
-              <option {% if tone_of_voice == 'Inspiring' %}selected{% endif %}>Inspiring</option>
-              <option {% if tone_of_voice == 'Humble' %}selected{% endif %}>Humble</option>
-              <option {% if tone_of_voice == 'Conversational' %}selected{% endif %}>Conversational</option>
-              <option {% if tone_of_voice == 'Storytelling' %}selected{% endif %}>Storytelling</option>
-              <option {% if tone_of_voice == 'Promotional' %}selected{% endif %}>Promotional</option>
-              <option {% if tone_of_voice == 'Thought-provoking' %}selected{% endif %}>Thought-provoking</option>
-            </select>
+        <!-- Topic -->
+        <div class="row g-3 mb-3">
+          <div class="col-12">
+            <label class="form-label-modern">Topic / Context<span class="text-danger">*</span></label>
+            <input type="text" class="form-control form-control-modern" name="topic_context"
+              placeholder="Enter topic..." required>
           </div>
         </div>
 
         <!-- Optional Inputs -->
-        <div class="mb-3">
-          <label class="fw-semibold">Keywords (help guide post creation)</label>
-          <textarea name="keywords" class="form-control border-2" rows="2" placeholder="e.g., innovation, leadership, learning, teamwork"></textarea>
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label-modern">Keywords</label>
+            <input type="text" name="keywords" class="form-control form-control-modern"
+              placeholder="e.g., innovation, leadership, learning">
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label-modern">Call-to-Action (CTA)</label>
+            <input type="text" name="cta" class="form-control form-control-modern"
+              placeholder="e.g., Let's connect! | Comment your thoughts!">
+          </div>
         </div>
 
-        <div class="mb-3">
-          <label class="fw-semibold">Optional Call-to-Action (CTA)</label>
-          <input type="text" name="cta" class="form-control border-2" placeholder="e.g., Let’s connect! | Comment your thoughts!">
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label-modern">Hashtags</label>
+            <input type="text" name="hashtags" class="form-control form-control-modern"
+              placeholder="Leave blank to auto-generate">
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label-modern">Additional Notes</label>
+            <input type="text" name="prompt" class="form-control form-control-modern"
+              placeholder="Add extra context or tone guidance...">
+          </div>
         </div>
 
-        <div class="mb-3">
-          <label class="fw-semibold">Additional Notes</label>
-          <textarea name="prompt" class="form-control border-2" rows="3" placeholder="Add extra context or tone guidance..."></textarea>
-        </div>
-
-        <div class="mb-3">
-          <label class="fw-semibold">Hashtags</label>
-          <input type="text" name="hashtags" class="form-control border-2" placeholder="Leave blank to auto-generate hashtags">
-        </div>
-
-        <div class="mb-3">
-          <label class="fw-semibold">Formatting Preference</label>
-          <select name="formatting" class="form-select border-2">
-            <option value="" disabled selected>Select format</option>
-            <option>Short & Punchy</option>
-            <option>Story Format</option>
-            <option>Professional Announcement</option>
-            <option>Carousel-Friendly</option>
-            <option>Listicle</option>
-          </select>
-        </div>
-
-        <div class="text-center">
+        <div class="text-center mt-4">
           {% if not session.get('linkedin_token') %}
-            <button type="button" class="btn btn-primary btn-lg" disabled>🔒 Connect to LinkedIn first</button>
+          <button type="button" class="btn btn-checkout" disabled>🔒 Connect to LinkedIn first</button>
           {% else %}
-            <button type="submit" class="btn btn-primary btn-lg">✨ Generate Content</button>
+          <button type="submit" class="btn btn-checkout">Generate Content</button>
           {% endif %}
         </div>
 
@@ -178,7 +434,6 @@
           <div class="loader"></div>
           <p class="mt-3 text-primary fw-semibold">Generating your posts, please wait...</p>
         </div>
-
       </form>
     </div>
   </div>

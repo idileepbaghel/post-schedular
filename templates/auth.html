@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Pages</title>
+
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+
+  <!-- Bootstrap Icons -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
+  >
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .page-selector {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .page-btn {
+            padding: 10px 30px;
+            border: 2px solid #125578;
+            background-color: white;
+            color: #125578;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .page-btn.active {
+            background: linear-gradient(135deg, #125578 0%, #0a3a52 100%);
+            color: white;
+        }
+
+        .page-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(18, 85, 120, 0.3);
+        }
+
+        .form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background-color: #ffffff;
+            padding: 40px;
+            width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .form.hidden {
+            display: none;
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .form-header h2 {
+            color: #125578;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .form-header p {
+            color: #666;
+            font-size: 15px;
+        }
+
+        ::placeholder {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        .flex-column {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .flex-column>label {
+            color: #151717;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .inputForm {
+            border: 1.5px solid #ecedec;
+            border-radius: 10px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            transition: 0.2s ease-in-out;
+            background-color: #fafafa;
+        }
+
+        .input {
+            margin-left: 10px;
+            border-radius: 10px;
+            border: none;
+            width: 85%;
+            height: 100%;
+            background-color: transparent;
+            font-size: 14px;
+        }
+
+        .input:focus {
+            outline: none;
+        }
+
+        .inputForm:focus-within {
+            border: 1.5px solid #125578;
+            background-color: #fff;
+        }
+
+        .inputForm svg {
+            fill: #999;
+            transition: 0.2s ease-in-out;
+        }
+
+        .inputForm:focus-within svg {
+            fill: #125578;
+        }
+
+        .flex-row {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+            justify-content: space-between;
+        }
+
+        .flex-row>div {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .flex-row>div>label {
+            font-size: 14px;
+            color: black;
+            font-weight: 400;
+        }
+
+        .flex-row input[type="checkbox"] {
+            cursor: pointer;
+        }
+
+        .span {
+            font-size: 14px;
+            color: #125578;
+            font-weight: 500;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .span:hover {
+            color: #0a3a52;
+            text-decoration: underline;
+        }
+
+        .button-submit {
+            margin: 20px 0 10px 0;
+            background: linear-gradient(135deg, #125578 0%, #0a3a52 100%);
+            border: none;
+            color: white;
+            font-size: 15px;
+            font-weight: 500;
+            border-radius: 10px;
+            height: 50px;
+            width: 100%;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .button-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(18, 85, 120, 0.4);
+        }
+
+        .button-submit:active {
+            transform: translateY(0);
+        }
+
+        .p {
+            text-align: center;
+            color: black;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+
+        /* .p.line {
+            position: relative;
+            margin: 15px 0;
+        }
+
+        .p.line::before,
+        .p.line::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background-color: #ecedec;
+        }
+
+        .p.line::before {
+            left: 0;
+        }
+
+        .p.line::after {
+            right: 0;
+        } */
+
+        .btn {
+            margin-top: 10px;
+            width: 100%;
+            height: 50px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 500;
+            gap: 10px;
+            border: 1.5px solid #ededef;
+            background-color: white;
+            cursor: pointer;
+            transition: 0.2s ease-in-out;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            border: 1.5px solid #125578;
+            background-color: #f8f9ff;
+        }
+
+        .social-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .social-buttons .btn {
+            flex: 1;
+        }
+
+        .linkedin {
+            color: #0077b5;
+        }
+
+        .facebook {
+            color: #1877f2;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="position-fixed top-0 end-0 p-3" style="z-index: 11;">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+        <!-- Page Selector -->
+        <div class="page-selector">
+            <button class="page-btn active" onclick="showSignIn()">Sign In</button>
+            <button class="page-btn" onclick="showSignUp()">Sign Up</button>
+        </div>
+
+        <!-- Sign In Form -->
+        <div class="form" id="signinForm">
+            <div class="form-header">
+                <h2>Welcome Back</h2>
+                <p>Sign in to your account</p>
+            </div>
+
+            <div class="flex-column">
+                <label>Email</label>
+                <div class="inputForm">
+                    <svg height="20" viewBox="0 0 32 32" width="20" xmlns="http://www.w3.org/2000/svg">
+                        <g id="Layer_3" data-name="Layer 3">
+                            <path
+                                d="m30.853 13.87a15 15 0 0 0 -29.729 4.082 15.1 15.1 0 0 0 12.876 12.918 15.6 15.6 0 0 0 2.016.13 14.85 14.85 0 0 0 7.715-2.145 1 1 0 1 0 -1.031-1.711 13.007 13.007 0 1 1 5.458-6.529 2.149 2.149 0 0 1 -4.158-.759v-10.856a1 1 0 0 0 -2 0v1.726a8 8 0 1 0 .2 10.325 4.135 4.135 0 0 0 7.83.274 15.2 15.2 0 0 0 .823-7.455zm-14.853 8.13a6 6 0 1 1 6-6 6.006 6.006 0 0 1 -6 6z">
+                            </path>
+                        </g>
+                    </svg>
+                    <input type="text" class="input" placeholder="Enter your Email">
+                </div>
+            </div>
+
+            <div class="flex-column">
+                <label>Password</label>
+                <div class="inputForm">
+                    <svg height="20" viewBox="-64 0 512 512" width="20" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="m336 512h-288c-26.453125 0-48-21.523438-48-48v-224c0-26.476562 21.546875-48 48-48h288c26.453125 0 48 21.523438 48 48v224c0 26.476562-21.546875 48-48 48zm-288-288c-8.8125 0-16 7.167969-16 16v224c0 8.832031 7.1875 16 16 16h288c8.8125 0 16-7.167969 16-16v-224c0-8.832031-7.1875-16-16-16zm0 0">
+                        </path>
+                        <path
+                            d="m304 224c-8.832031 0-16-7.167969-16-16v-80c0-52.929688-43.070312-96-96-96s-96 43.070312-96 96v80c0 8.832031-7.167969 16-16 16s-16-7.167969-16-16v-80c0-70.59375 57.40625-128 128-128s128 57.40625 128 128v80c0 8.832031-7.167969 16-16 16zm0 0">
+                        </path>
+                    </svg>
+                    <input type="password" class="input" placeholder="Enter your Password">
+                    <!-- <svg viewBox="0 0 576 512" height="1em" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64c-7.1 0-13.9-1.2-20.3-3.3c-5.5-1.8-11.9 1.6-11.7 7.4c.3 6.9 1.3 13.8 3.2 20.7c13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-11.1-41.5-47.8-69.4-88.6-71.1c-5.8-.2-9.2 6.1-7.4 11.7c2.1 6.4 3.3 13.2 3.3 20.3z"></path>
+                    </svg> -->
+                </div>
+            </div>
+
+            <!-- <div class="flex-row">
+                <div>
+                    <input type="checkbox" id="rememberMe">
+                    <label for="rememberMe">Remember me</label>
+                </div>
+                <span class="span">Forgot password?</span>
+            </div> -->
+
+            <button type="button" class="button-submit">Sign In</button>
+
+            <p class="p">Don't have an account? <span class="span" onclick="showSignUp()">Sign Up</span></p>
+
+            <p class="p line">---------- Or Continue With ----------</p>
+
+            <div class="social-buttons">
+                <a type="button" class="btn linkedin" href="{{ url_for('linkedin_login') }}">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#0077b5" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                    </svg>
+                    LinkedIn
+                </a>
+                <a type="button" class="btn facebook">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#1877f2" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                    </svg>
+                    Facebook
+                </a>
+            </div>
+        </div>
+
+        <!-- Sign Up Form -->
+        <div class="form hidden" id="signupForm">
+            <div class="form-header">
+                <h2>Create Account</h2>
+                <p>Sign up to get started</p>
+            </div>
+
+            <div class="flex-column">
+                <label>Full Name</label>
+                <div class="inputForm">
+                    <svg height="20" width="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M20 21C20 17.134 16.4183 14 12 14C7.58172 14 4 17.134 4 21" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <input type="text" class="input" placeholder="Enter your full name">
+                </div>
+            </div>
+
+            <div class="flex-column">
+                <label>Email</label>
+                <div class="inputForm">
+                    <svg height="20" viewBox="0 0 32 32" width="20" xmlns="http://www.w3.org/2000/svg">
+                        <g id="Layer_3" data-name="Layer 3">
+                            <path
+                                d="m30.853 13.87a15 15 0 0 0 -29.729 4.082 15.1 15.1 0 0 0 12.876 12.918 15.6 15.6 0 0 0 2.016.13 14.85 14.85 0 0 0 7.715-2.145 1 1 0 1 0 -1.031-1.711 13.007 13.007 0 1 1 5.458-6.529 2.149 2.149 0 0 1 -4.158-.759v-10.856a1 1 0 0 0 -2 0v1.726a8 8 0 1 0 .2 10.325 4.135 4.135 0 0 0 7.83.274 15.2 15.2 0 0 0 .823-7.455zm-14.853 8.13a6 6 0 1 1 6-6 6.006 6.006 0 0 1 -6 6z">
+                            </path>
+                        </g>
+                    </svg>
+                    <input type="text" class="input" placeholder="Enter your Email">
+                </div>
+            </div>
+
+            <div class="flex-column">
+                <label>Password</label>
+                <div class="inputForm">
+                    <svg height="20" viewBox="-64 0 512 512" width="20" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="m336 512h-288c-26.453125 0-48-21.523438-48-48v-224c0-26.476562 21.546875-48 48-48h288c26.453125 0 48 21.523438 48 48v224c0 26.476562-21.546875 48-48 48zm-288-288c-8.8125 0-16 7.167969-16 16v224c0 8.832031 7.1875 16 16 16h288c8.8125 0 16-7.167969 16-16v-224c0-8.832031-7.1875-16-16-16zm0 0">
+                        </path>
+                        <path
+                            d="m304 224c-8.832031 0-16-7.167969-16-16v-80c0-52.929688-43.070312-96-96-96s-96 43.070312-96 96v80c0 8.832031-7.167969 16-16 16s-16-7.167969-16-16v-80c0-70.59375 57.40625-128 128-128s128 57.40625 128 128v80c0 8.832031-7.167969 16-16 16zm0 0">
+                        </path>
+                    </svg>
+                    <input type="password" class="input" placeholder="Create a Password">
+                    <svg viewBox="0 0 576 512" height="1em" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64c-7.1 0-13.9-1.2-20.3-3.3c-5.5-1.8-11.9 1.6-11.7 7.4c.3 6.9 1.3 13.8 3.2 20.7c13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-11.1-41.5-47.8-69.4-88.6-71.1c-5.8-.2-9.2 6.1-7.4 11.7c2.1 6.4 3.3 13.2 3.3 20.3z">
+                        </path>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="flex-column">
+                <label>Confirm Password</label>
+                <div class="inputForm">
+                    <svg height="20" viewBox="-64 0 512 512" width="20" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="m336 512h-288c-26.453125 0-48-21.523438-48-48v-224c0-26.476562 21.546875-48 48-48h288c26.453125 0 48 21.523438 48 48v224c0 26.476562-21.546875 48-48 48zm-288-288c-8.8125 0-16 7.167969-16 16v224c0 8.832031 7.1875 16 16 16h288c8.8125 0 16-7.167969 16-16v-224c0-8.832031-7.1875-16-16-16zm0 0">
+                        </path>
+                        <path
+                            d="m304 224c-8.832031 0-16-7.167969-16-16v-80c0-52.929688-43.070312-96-96-96s-96 43.070312-96 96v80c0 8.832031-7.167969 16-16 16s-16-7.167969-16-16v-80c0-70.59375 57.40625-128 128-128s128 57.40625 128 128v80c0 8.832031-7.167969 16-16 16zm0 0">
+                        </path>
+                    </svg>
+                    <input type="password" class="input" placeholder="Confirm your Password">
+                </div>
+            </div>
+
+            <div class="flex-row">
+                <div>
+                    <input type="checkbox" id="agreeTerms">
+                    <label for="agreeTerms">I agree to Terms & Conditions</label>
+                </div>
+            </div>
+
+            <button type="button" class="button-submit">Sign Up</button>
+
+            <p class="p">Already have an account? <span class="span" onclick="showSignIn()">Sign In</span></p>
+
+            <p class="p line">---------- Or Continue With ----------</p>
+
+            <div class="social-buttons">
+                <button type="button" class="btn linkedin">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#0077b5" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                    </svg>
+                    LinkedIn
+                </button>
+                <button type="button" class="btn facebook">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#1877f2" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                    </svg>
+                    Facebook
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function showSignIn() {
+            document.getElementById('signinForm').classList.remove('hidden');
+            document.getElementById('signupForm').classList.add('hidden');
+
+            const btns = document.querySelectorAll('.page-btn');
+            btns[0].classList.add('active');
+            btns[1].classList.remove('active');
+        }
+
+        function showSignUp() {
+            document.getElementById('signinForm').classList.add('hidden');
+            document.getElementById('signupForm').classList.remove('hidden');
+
+            const btns = document.querySelectorAll('.page-btn');
+            btns[0].classList.remove('active');
+            btns[1].classList.add('active');
+        }
+    </script>
+</body>
+
+</html>

@@ -1,235 +1,388 @@
-{% extends 'base.html' %} 
+{% extends 'base.html' %}
 {% block content %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
+
+<!-- Bootstrap 4 JS and Popper.js -->
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+
 <style>
+  body::before {
+    content: '';
+    position: fixed;
+    top: -100px;
+    right: -100px;
+    width: 400px;
+    height: 400px;
+    background: #FEC320;
+    opacity: 0.1;
+    border-radius: 50%;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -150px;
+    left: -150px;
+    width: 500px;
+    height: 500px;
+    background: #FEC320;
+    opacity: 0.08;
+    border-radius: 50%;
+    z-index: 0;
+  }
+
   .daywise-container {
-    max-width: 1400px;
+    max-width: 1300px;
     margin: 0 auto;
-    padding: 20px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    padding: 25px;
   }
 
   .header-banner {
     background: linear-gradient(135deg, #0f5f7a 0%, #1a8ba8 100%);
+    color: white;
     border-radius: 16px;
-    padding: 30px 40px;
-    margin-bottom: 30px;
-    box-shadow: 0 8px 24px rgba(15, 95, 122, 0.3);
-    display: flex;
-    align-items: center;
-    gap: 15px;
+    padding: 25px 40px;
+    margin-bottom: 25px;
+    box-shadow: 0 6px 20px rgba(15, 95, 122, 0.3);
   }
 
   .header-banner h1 {
-    color: white;
-    font-size: 32px;
-    font-weight: 600;
     margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .robot-icon {
-    background: white;
-    border-radius: 12px;
-    padding: 8px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 48px;
-    height: 48px;
     font-size: 28px;
+    font-weight: 600;
   }
 
-  .date-section {
-    margin-bottom: 40px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    overflow: hidden;
-  }
-
-  .date-header {
+  .table th {
     background: linear-gradient(135deg, #0f5f7a 0%, #1a8ba8 100%);
     color: white;
-    padding: 20px 30px;
-    font-size: 20px;
+  }
+
+  .status-posted {
+    color: #22c55e;
     font-weight: 600;
-    border-bottom: 3px solid #0a4a5e;
   }
 
-  .posts-container {
-    padding: 20px;
-  }
-
-  .post-card {
-    background: #ffffff;
-    border: 1px solid #e1e8ed;
-    border-radius: 10px;
-    padding: 24px;
-    margin-bottom: 20px;
-    transition: all 0.3s ease;
-    position: relative;
-  }
-
-  .post-card:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-    border-color: #1a8ba8;
-    transform: translateY(-2px);
-  }
-
-  .post-card:last-child {
-    margin-bottom: 0;
-  }
-
-  .post-content {
-    color: #333;
-    font-size: 15px;
-    line-height: 1.6;
-    margin-bottom: 20px;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-  }
-
-  .post-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    padding-top: 16px;
-    border-top: 1px solid #e1e8ed;
-  }
-
-  .btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
+  .status-pending {
+    color: #eab308;
     font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
   }
 
   .btn-linkedin {
     background: #0077b5;
     color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: 0.2s ease;
   }
 
   .btn-linkedin:hover {
-    background: #006399;
+    background: #005f87;
     transform: scale(1.05);
   }
 
-  .empty-state {
-    text-align: center;
-    padding: 80px 40px;
-    background: white;
+  /* LinkedIn-style modal */
+  .linkedin-post-modal .modal-content {
     border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
   }
 
-  .empty-state-icon {
-    font-size: 64px;
-    margin-bottom: 20px;
-    opacity: 0.3;
+  .linkedin-post-header {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    background: #f3f2ef;
+    border-bottom: 1px solid #ddd;
   }
 
-  .empty-state h2 {
-    color: #555;
-    font-size: 24px;
-    margin-bottom: 12px;
+  .linkedin-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #d9d9d9;
+    margin-right: 10px;
   }
 
-  .empty-state p {
-    color: #888;
+  .linkedin-user-info {
+    line-height: 1.2;
+  }
+
+  .linkedin-user-info strong {
+    display: block;
+    font-size: 15px;
+  }
+
+  .linkedin-user-info small {
+    color: gray;
+  }
+
+  .linkedin-post-body {
+    padding: 20px;
+    background: #fff;
+  }
+
+  .linkedin-post-body p {
+    white-space: pre-wrap;
+    color: #333;
+    line-height: 1.5;
+    font-size: 15px;
+  }
+
+  .linkedin-post-footer {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 20px;
+    border-top: 1px solid #ddd;
+    background: #f9f9f9;
+    color: #777;
+    font-size: 14px;
+  }
+
+  /* === LinkedIn Modal Color Configurations === */
+  :root {
+    --linkedin-primary: #0a66c2;
+    --linkedin-hover: #004182;
+    --linkedin-light-bg: #f3f2ef;
+    --linkedin-border: #e0e0e0;
+    --linkedin-text: #333;
+    --linkedin-muted: #666;
+    --linkedin-card-shadow: rgba(0, 0, 0, 0.05);
+  }
+
+  /* === Card Layout === */
+  .linkedin-card {
+    border-radius: 10px;
+    border: 1px solid var(--linkedin-border);
+    background: #fff;
+    box-shadow: 0 2px 10px var(--linkedin-card-shadow);
+    overflow: hidden;
+    font-family: "Segoe UI", Roboto, sans-serif;
+  }
+
+  .linkedin-card-header {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--linkedin-border);
+    background-color: var(--linkedin-light-bg);
+  }
+
+  .linkedin-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    margin-right: 10px;
+    object-fit: cover;
+  }
+
+  .linkedin-card-body {
+    padding: 20px;
+    font-size: 15px;
+    color: var(--linkedin-text);
+    line-height: 1.5;
+  }
+
+  /* Hashtags styling */
+  .linkedin-hashtags {
+    margin-top: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--linkedin-primary);
+    word-wrap: break-word;
+  }
+
+  /* Reactions and stats */
+  .linkedin-card-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--linkedin-border);
+    border-bottom: 1px solid var(--linkedin-border);
+    padding: 10px 20px;
+    font-size: 13px;
+    color: var(--linkedin-muted);
+  }
+
+  .emoji-icons {
     font-size: 16px;
   }
 
-  @media (max-width: 768px) {
-    .daywise-container {
-      padding: 15px;
-    }
+  /* Footer actions */
+  .linkedin-card-footer {
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    background: #fff;
+  }
 
-    .header-banner {
-      padding: 20px 25px;
-    }
+  .linkedin-card-footer button {
+    border: none;
+    background: transparent;
+    color: var(--linkedin-muted);
+    font-weight: 500;
+    font-size: 14px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+  }
 
-    .header-banner h1 {
-      font-size: 24px;
-    }
+  .linkedin-card-footer button:hover {
+    background: var(--linkedin-light-bg);
+    color: var(--linkedin-primary);
+  }
 
-    .date-header {
-      padding: 15px 20px;
-      font-size: 18px;
-    }
-
-    .post-card {
-      padding: 18px;
-    }
-
-    .post-footer {
-      flex-direction: column;
-    }
-
-    .btn {
-      width: 100%;
-      justify-content: center;
-    }
+  /* Optional hover glow */
+  .linkedin-card:hover {
+    box-shadow: 0 4px 20px rgba(10, 102, 194, 0.15);
   }
 </style>
 
   {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="position-fixed top-0 end-0 p-3" style="z-index: 11;">
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-        {% endfor %}
-      </div>
-    {% endif %}
+  {% if messages %}
+  <div class="position-fixed top-0 end-0 p-3" style="z-index: 11;">
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
   {% endwith %}
 
 <div class="daywise-container">
   <div class="header-banner">
-    <h1> Day-wise Saved Posts</h1>
+    <h1>📅 Day-wise Saved Posts</h1>
   </div>
 
-  {% if posts_by_date %}
-    {% for date, posts in posts_by_date.items() %}
-    <div class="date-section">
-      <div class="date-header">
-        📆 {{ date }}
-      </div>
-      <div class="posts-container">
-        {% for post in posts %}
-        <div class="post-card">
-          <div class="post-content">{{ post.content }}</div>
-          <div class="post-footer">
-            <form action="{{ url_for('post_to_linkedin') }}" method="POST" style="display: inline;">
+  {% if all_posts %}
+  <div class="table-responsive mb-5">
+    <table class="table table-bordered table-striped datatable">
+      <thead>
+        <tr>
+          <th style="width: 60px;">S.No</th>
+          <th>Post</th>
+          <th style="width: 180px;">Post Date</th>
+          <th style="width: 120px;">Status</th>
+          <th style="width: 180px;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for post in all_posts %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>
+            <button type="button" class="btn btn-outline-primary btn-sm view-post" data-toggle="modal"
+              data-target="#postModal" data-content="{{ post.content|escape }}">
+              View Post
+            </button>
+          </td>
+          <td>{{ post.display_date }}</td>
+          <td>
+            {% if post.posted == 1 %}
+            <span class="status-posted text-success font-weight-bold">Posted</span>
+            {% else %}
+            <span class="status-pending text-warning font-weight-bold">Pending</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if post.posted == 0 %}
+            <form action="{{ url_for('post_to_linkedin') }}" method="POST" style="display:inline;">
               <input type="hidden" name="content" value="{{ post.content }}">
               <input type="hidden" name="post_id" value="{{ post.id }}">
-              <button type="submit" class="btn btn-linkedin">
-                🔗 Post to LinkedIn
-              </button>
+              <button type="submit" class="btn-linkedin">🔗 Post to LinkedIn</button>
             </form>
-          </div>
-        </div>
+            {% else %}
+            <span style="color:#777;">—</span>
+            {% endif %}
+          </td>
+        </tr>
         {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="text-center bg-white shadow p-5 rounded">
+    <h4>No Posts Found</h4>
+    <p class="text-muted">You haven't saved any posts yet. Start generating content to see them here!</p>
+  </div>
+  {% endif %}
+
+
+</div>
+
+<!-- LinkedIn-style Post Modal -->
+<div class="modal fade" id="postModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content linkedin-card">
+      <div class="linkedin-card-header">
+        <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" class="linkedin-avatar" alt="User Avatar">
+        <div>
+          <h6 class="mb-0">{{ session.get('user_name', 'You') }}</h6>
+          <small class="text-muted">Student @ University of Lucknow · Now · 🌐</small>
+        </div>
+      </div>
+
+      <div class="linkedin-card-body">
+        <p id="postModalContent"></p>
+        <p id="postModalHashtags" class="linkedin-hashtags mt-2"></p>
+      </div>
+
+      <div class="linkedin-card-stats">
+        <div class="d-flex align-items-center">
+          <span class="emoji-icons">👍 ❤️ 🔁</span>
+          <small class="ml-1 text-muted">You and 88 others</small>
+        </div>
+        <div>
+          <small class="text-muted">4 comments · 1 repost</small>
+        </div>
+      </div>
+
+      <div class="linkedin-card-footer">
+        <button><i class="far fa-thumbs-up"></i> Like</button>
+        <button><i class="far fa-comment"></i> Comment</button>
+        <button><i class="fas fa-share"></i> Share</button>
+        <button><i class="far fa-paper-plane"></i> Send</button>
       </div>
     </div>
-    {% endfor %}
-  {% else %}
-    <div class="empty-state">
-      <div class="empty-state-icon">📭</div>
-      <h2>No Posts Found</h2>
-      <p>You haven't saved any posts yet. Start generating content to see them here!</p>
-    </div>
-  {% endif %}
+  </div>
 </div>
+
+
+<script>
+  $(document).ready(function () {
+    $('.datatable').DataTable({
+      pageLength: 5,
+      order: [],
+      language: { search: "🔍 Search Posts:" }
+    });
+  });
+
+  $('.view-post').on('click', function () {
+    const content = $(this).data('content') || '';
+
+    // Extract hashtags (e.g., #Python, #Learning)
+    const hashtags = content.match(/#\w+/g) || [];
+
+    // Remove hashtags from main content
+    const cleanContent = content.replace(/#\w+/g, '').trim();
+
+    // Replace newlines with <br> to preserve line breaks
+    const formattedContent = cleanContent.replace(/\n/g, '<br>');
+
+    // Set modal content
+    $('#postModalContent').html(formattedContent);
+    $('#postModalHashtags').text(hashtags.join(' '));
+  });
+</script>
 
 {% endblock %}
