@@ -3,18 +3,17 @@ import os
 from flask import Flask, render_template, request, flash, redirect, url_for, session, jsonify
 from dotenv import load_dotenv
 from flask_mysqldb import MySQL
+from flask_bcrypt import Bcrypt
 from datetime import datetime, timedelta
 import markdown
 from google import genai
 import base64
 from google.genai import types
-from PIL import Image, ImageDraw
+from PIL import Image
 import base64
 import requests
 from apscheduler.schedulers.background import BackgroundScheduler
-import re
 from functools import wraps
-import sys
 import traceback
 import json
 import urllib.parse
@@ -23,21 +22,21 @@ import secrets
 load_dotenv()
 
 app = Flask(__name__)
+bcrypt = Bcrypt(app)
 
-# Database configuration
 # for development
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = ''
-app.config['MYSQL_DB'] = 'learntrail_content' 
-app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
+# app.config['MYSQL_HOST'] = 'localhost'
+# app.config['MYSQL_USER'] = 'root'
+# app.config['MYSQL_PASSWORD'] = ''
+# app.config['MYSQL_DB'] = 'learntrail_content' 
+# app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 
 # for production (uncomment when deploying)
-# app.config['MYSQL_HOST'] = 'localhost'
-# app.config['MYSQL_USER'] = 'learntrail_dbcontent'
-# app.config['MYSQL_PASSWORD'] = '(hmS-lZQYdsS.)MU'
-# app.config['MYSQL_DB'] = 'learntrail_content'
-# app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'learntrail_dbcontent'
+app.config['MYSQL_PASSWORD'] = '(hmS-lZQYdsS.)MU'
+app.config['MYSQL_DB'] = 'learntrail_content'
+app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 
 mysql = MySQL(app)
 scheduler = BackgroundScheduler()
@@ -46,7 +45,7 @@ app.secret_key = "dileep"
 # LinkedIn OAuth Configuration
 LINKEDIN_CLIENT_ID = os.getenv("LINKEDIN_CLIENT_ID")
 LINKEDIN_CLIENT_SECRET = os.getenv("LINKEDIN_CLIENT_SECRET")
-LINKEDIN_REDIRECT_URI = 'http://localhost:5500/linkedin/callback'
+LINKEDIN_REDIRECT_URI = 'https://connect.learntrail.co.in/linkedin/callback'
 
 print(f"LinkedIn Config: {LINKEDIN_CLIENT_ID}, {LINKEDIN_CLIENT_SECRET}, {LINKEDIN_REDIRECT_URI}")
 
@@ -74,7 +73,7 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session or 'linkedin_token' not in session:
-            flash("🔒 Please sign in to access this page.", "warning")
+            flash("Please sign in to access this page.", "warning")
             return redirect(url_for('signin'))
         return f(*args, **kwargs)
     return decorated_function
@@ -85,10 +84,59 @@ def login_required(f):
 
 @app.route('/signin')
 def signin():
-    """Sign in page - redirects to main page if already logged in"""
     if 'user_id' in session and 'linkedin_token' in session:
         return redirect(url_for('generate_text'))
     return render_template('auth.html', page='signin')
+
+# -------------------------------
+# ✅ Handle signin POST (MySQL)
+# -------------------------------
+@app.route('/signin', methods=['POST'])
+def signin_post():
+    email = request.form.get('email')
+    password = request.form.get('password')
+
+    if not email or not password:
+        flash('Please fill in all fields.', 'warning')
+        return redirect(url_for('signin'))
+
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT * FROM linkedin_tokens WHERE user_email = %s", (email,))
+    user = cur.fetchone()
+
+    if not user:
+        flash('No account found with that email.', 'danger')
+        cur.close()
+        return redirect(url_for('signin'))
+
+    if not user.get('password') or user['password'] == '':
+        hashed = bcrypt.generate_password_hash(password).decode('utf-8')
+        cur.execute(
+            "UPDATE linkedin_tokens SET password = %s, updated_date = %s WHERE user_email = %s",
+            (hashed, datetime.now(), email)
+        )
+        mysql.connection.commit()
+        cur.close()
+        flash('Password created successfully! You can now log in.', 'success')
+        return redirect(url_for('signin'))
+
+    # ✅ Verify existing password
+    if bcrypt.check_password_hash(user['password'], password):
+        session['user_id'] = user['id']
+        session['user_email'] = user['user_email']
+
+        # ✅ Also store LinkedIn token (required by login_required)
+        linkedin_token = user.get('linkedin_token') or user.get('access_token')
+        if linkedin_token:
+            session['linkedin_token'] = linkedin_token
+
+        flash('Welcome back!', 'success')
+        cur.close()
+        return redirect(url_for('generate_text'))
+    else:
+        flash('Incorrect password. Try again.', 'danger')
+        cur.close()
+        return redirect(url_for('signin'))
 
 @app.route('/signup')
 def signup():
