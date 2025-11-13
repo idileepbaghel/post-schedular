@@ -3,17 +3,18 @@ import os
 from flask import Flask, render_template, request, flash, redirect, url_for, session, jsonify
 from dotenv import load_dotenv
 from flask_mysqldb import MySQL
-from flask_bcrypt import Bcrypt
 from datetime import datetime, timedelta
 import markdown
 from google import genai
 import base64
 from google.genai import types
-from PIL import Image
+from PIL import Image, ImageDraw
 import base64
 import requests
 from apscheduler.schedulers.background import BackgroundScheduler
+from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
+import sys
 import traceback
 import json
 import urllib.parse
@@ -22,21 +23,21 @@ import secrets
 load_dotenv()
 
 app = Flask(__name__)
-bcrypt = Bcrypt(app)
 
+# Database configuration
 # for development
-# app.config['MYSQL_HOST'] = 'localhost'
-# app.config['MYSQL_USER'] = 'root'
-# app.config['MYSQL_PASSWORD'] = ''
-# app.config['MYSQL_DB'] = 'learntrail_content' 
-# app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = ''
+app.config['MYSQL_DB'] = 'learntrail_content' 
+app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 
 # for production (uncomment when deploying)
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'learntrail_dbcontent'
-app.config['MYSQL_PASSWORD'] = '(hmS-lZQYdsS.)MU'
-app.config['MYSQL_DB'] = 'learntrail_content'
-app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
+# app.config['MYSQL_HOST'] = 'localhost'
+# app.config['MYSQL_USER'] = 'learntrail_dbcontent'
+# app.config['MYSQL_PASSWORD'] = '(hmS-lZQYdsS.)MU'
+# app.config['MYSQL_DB'] = 'learntrail_content'
+# app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 
 mysql = MySQL(app)
 scheduler = BackgroundScheduler()
@@ -45,7 +46,7 @@ app.secret_key = "dileep"
 # LinkedIn OAuth Configuration
 LINKEDIN_CLIENT_ID = os.getenv("LINKEDIN_CLIENT_ID")
 LINKEDIN_CLIENT_SECRET = os.getenv("LINKEDIN_CLIENT_SECRET")
-LINKEDIN_REDIRECT_URI = 'https://connect.learntrail.co.in/linkedin/callback'
+LINKEDIN_REDIRECT_URI = 'http://localhost:5500/linkedin/callback'
 
 print(f"LinkedIn Config: {LINKEDIN_CLIENT_ID}, {LINKEDIN_CLIENT_SECRET}, {LINKEDIN_REDIRECT_URI}")
 
@@ -56,12 +57,10 @@ os.makedirs(IMAGE_FOLDER, exist_ok=True)
 # Initialize Gemini client
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
-    print("FATAL: GEMINI_API_KEY environment variable not set.")
     client = None
 else:
     try:
         client = genai.Client(api_key=GEMINI_API_KEY)
-        print("Gemini client initialized successfully")
     except Exception as e:
         print(f"Error initializing Gemini client: {e}")
         client = None
@@ -72,71 +71,62 @@ else:
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_id' not in session or 'linkedin_token' not in session:
+        if 'user_id' not in session:
             flash("Please sign in to access this page.", "warning")
             return redirect(url_for('signin'))
+
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT user_urn FROM linkedin_tokens WHERE id=%s", (session['user_id'],))
+        user = cur.fetchone()
+        cur.close()
+
+        if not user or not user['user_urn']:
+            flash("⚠️ Please verify your LinkedIn account to continue.", "warning")
+            return redirect(url_for('verify_social'))
+
         return f(*args, **kwargs)
     return decorated_function
 
 # ================================
 # AUTHENTICATION ROUTES
 # ================================
-
 @app.route('/signin')
 def signin():
+    """Sign in page - redirects to main page if already logged in"""
     if 'user_id' in session and 'linkedin_token' in session:
         return redirect(url_for('generate_text'))
     return render_template('auth.html', page='signin')
 
-# -------------------------------
-# ✅ Handle signin POST (MySQL)
-# -------------------------------
-@app.route('/signin', methods=['POST'])
+@app.route('/signin_post', methods=['POST'])
 def signin_post():
-    email = request.form.get('email')
-    password = request.form.get('password')
-
-    if not email or not password:
-        flash('Please fill in all fields.', 'warning')
-        return redirect(url_for('signin'))
+    """Logs user in via email/password or prompts LinkedIn verification."""
+    email = request.form['email']
+    password = request.form['password']
 
     cur = mysql.connection.cursor()
-    cur.execute("SELECT * FROM linkedin_tokens WHERE user_email = %s", (email,))
+    cur.execute("SELECT * FROM linkedin_tokens WHERE user_email=%s", (email,))
     user = cur.fetchone()
+    cur.close()
 
-    if not user:
-        flash('No account found with that email.', 'danger')
-        cur.close()
+    if not user or not check_password_hash(user['password'], password):
+        flash("❌ Invalid email or password.", "danger")
         return redirect(url_for('signin'))
 
-    if not user.get('password') or user['password'] == '':
-        hashed = bcrypt.generate_password_hash(password).decode('utf-8')
-        cur.execute(
-            "UPDATE linkedin_tokens SET password = %s, updated_date = %s WHERE user_email = %s",
-            (hashed, datetime.now(), email)
-        )
-        mysql.connection.commit()
-        cur.close()
-        flash('Password created successfully! You can now log in.', 'success')
-        return redirect(url_for('signin'))
+    # Save session
+    session['user_id'] = user['id']
+    session['user_email'] = user['user_email']
+    session['linkedin_user'] = user['user_name']
+    session['linkedin_user_urn'] = user.get('user_urn')
+    session['linkedin_token'] = user.get('access_token')
 
-    # ✅ Verify existing password
-    if bcrypt.check_password_hash(user['password'], password):
-        session['user_id'] = user['id']
-        session['user_email'] = user['user_email']
+    # Check LinkedIn verification
+    if not user.get('user_urn') or not user.get('access_token'):
+        flash("⚠️ Please verify your LinkedIn account before using the panel.", "warning")
+        return redirect(url_for('verify_social'))
 
-        # ✅ Also store LinkedIn token (required by login_required)
-        linkedin_token = user.get('linkedin_token') or user.get('access_token')
-        if linkedin_token:
-            session['linkedin_token'] = linkedin_token
+    flash(f"✅ Welcome back, {user['user_name']}!", "success")
+    return redirect(url_for('generate_text'))
 
-        flash('Welcome back!', 'success')
-        cur.close()
-        return redirect(url_for('generate_text'))
-    else:
-        flash('Incorrect password. Try again.', 'danger')
-        cur.close()
-        return redirect(url_for('signin'))
 
 @app.route('/signup')
 def signup():
@@ -145,6 +135,37 @@ def signup():
         return redirect(url_for('generate_text'))
     return render_template('auth.html', page='signup')
 
+@app.route('/signup_post', methods=['POST'])
+def signup_post():
+    """Registers a new user with form signup."""
+    name = request.form['name']
+    email = request.form['email']
+    password = request.form['password']
+    password_hash = generate_password_hash(password)
+
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT id FROM linkedin_tokens WHERE user_email=%s", (email,))
+    existing = cur.fetchone()
+
+    if existing:
+        flash("⚠️ Email already registered. Please sign in.", "warning")
+        return redirect(url_for('signin'))
+
+    cur.execute("""
+        INSERT INTO linkedin_tokens (user_name, user_email, password, added_by, added_date, updated_by, updated_date)
+        VALUES (%s, %s, %s, 'System', NOW(), 'System', NOW())
+    """, (name, email, password_hash))
+    mysql.connection.commit()
+    user_id = cur.lastrowid
+    cur.close()
+
+    session['user_id'] = user_id
+    session['user_email'] = email
+    session['linkedin_user'] = name
+
+    flash("✅ Account created! Please verify your LinkedIn account to access services.", "info")
+    return redirect(url_for('verify_social'))
+
 @app.route('/logout')
 def logout():
     """Logout route - clears all session data"""
@@ -152,10 +173,26 @@ def logout():
     flash("✅ You have been logged out successfully.", "success")
     return redirect(url_for('signin'))
 
+@app.route('/verify_social')
+def verify_social():
+    """Page to enforce LinkedIn verification before using services."""
+    if 'user_id' not in session:
+        flash("Please sign in first.", "warning")
+        return redirect(url_for('signin'))
+
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT user_urn FROM linkedin_tokens WHERE id=%s", (session['user_id'],))
+    user = cur.fetchone()
+    cur.close()
+
+    if user and user['user_urn']:
+        return redirect(url_for('generate_text'))
+
+    return render_template('verify_social.html')
+
 # ================================
 # LINKEDIN OAUTH ROUTES
 # ================================
-
 @app.route('/linkedin/login')
 def linkedin_login():
     """Initiates LinkedIn OAuth flow"""
@@ -196,9 +233,8 @@ def linkedin_login():
 
 @app.route('/linkedin/callback')
 def linkedin_callback():
-    """Handles LinkedIn OAuth callback - creates or updates user"""
+    """Handles LinkedIn OAuth callback - creates, updates, or links user"""
     print("\n=== [DEBUG] /linkedin/callback CALLED ===")
-    
     print(f"[DEBUG] Request args: {dict(request.args)}")
 
     error = request.args.get("error")
@@ -217,7 +253,6 @@ def linkedin_callback():
 
     print(f"[DEBUG] Received authorization code: {code}")
 
-    # Exchange code for access token
     token_url = "https://www.linkedin.com/oauth/v2/accessToken"
     data = {
         "grant_type": "authorization_code",
@@ -227,188 +262,122 @@ def linkedin_callback():
         "client_secret": LINKEDIN_CLIENT_SECRET
     }
 
-    print("[DEBUG] Sending POST request to LinkedIn token endpoint...")
-
     try:
+        print("[DEBUG] Sending POST request to LinkedIn token endpoint...")
         r = requests.post(token_url, data=data, timeout=10)
         print(f"[DEBUG] LinkedIn token response status: {r.status_code}")
         print(f"[DEBUG] LinkedIn token response body: {r.text}")
         r.raise_for_status()
         token_data = r.json()
-    except requests.exceptions.HTTPError as e:
-        print(f"[ERROR] LinkedIn HTTP error: {e}")
-        flash(f"❌ Error getting LinkedIn access token: {r.text}", "danger")
-        return redirect(url_for('signin'))
     except Exception as e:
         print(f"[ERROR] LinkedIn token request failed: {e}")
         flash(f"❌ Error getting LinkedIn access token: {str(e)}", "danger")
         return redirect(url_for('signin'))
 
     access_token = token_data.get("access_token")
-    print(f"[DEBUG] Extracted access_token: {access_token}")
-
     if not access_token:
         print("[ERROR] Access token not found in LinkedIn response")
         flash("⚠️ Failed to retrieve access token from LinkedIn.", "danger")
         return redirect(url_for('signin'))
 
-    # Fetch user profile
+    print(f"[DEBUG] Extracted access_token: {access_token}")
+
     try:
         profile_url = "https://api.linkedin.com/v2/userinfo"
         headers = {"Authorization": f"Bearer {access_token}"}
         print(f"[DEBUG] Fetching profile info from {profile_url}")
         profile_response = requests.get(profile_url, headers=headers, timeout=10)
 
-        print(f"[DEBUG] Profile response code: {profile_response.status_code}")
-        print(f"[DEBUG] Profile response text: {profile_response.text}")
+        if profile_response.status_code != 200:
+            print(f"[ERROR] Failed to fetch LinkedIn profile: {profile_response.status_code}")
+            flash("❌ Failed to fetch LinkedIn profile.", "danger")
+            return redirect(url_for('signin'))
 
-        if profile_response.status_code == 200:
-            profile_data = profile_response.json()
-            user_sub = profile_data.get("sub")
-            user_name = profile_data.get("name", "LinkedIn User")
-            user_email = profile_data.get("email", "")
-            
-            print(f"[DEBUG] LinkedIn profile data: {profile_data}")
-            print(f"[DEBUG] User sub (ID): {user_sub}")
-            print(f"[DEBUG] User name: {user_name}")
-            print(f"[DEBUG] User email: {user_email}")
+        profile_data = profile_response.json()
+        print(f"[DEBUG] LinkedIn profile data: {profile_data}")
 
-            if not user_sub:
-                print("[ERROR] User sub not found in profile")
-                flash("⚠️ Could not retrieve user ID from LinkedIn.", "danger")
-                return redirect(url_for('signin'))
+        user_sub = profile_data.get("sub")
+        user_name = profile_data.get("name", "LinkedIn User")
+        user_email = profile_data.get("email", "")
 
-            # Check if user exists in database
-            try:
-                cur = mysql.connection.cursor()
-                cur.execute("SELECT * FROM linkedin_tokens WHERE user_urn=%s", (user_sub,))
-                existing_user = cur.fetchone()
+        if not user_sub:
+            print("[ERROR] Missing user_sub in LinkedIn profile.")
+            flash("⚠️ Could not retrieve LinkedIn user ID.", "danger")
+            return redirect(url_for('signin'))
 
-                if existing_user:
-                    # User exists - UPDATE token (Sign In)
-                    print(f"[DEBUG] Existing user found with ID: {existing_user['id']}")
-                    cur.execute("""
-                        UPDATE linkedin_tokens
-                        SET access_token=%s, 
-                            user_name=%s, 
-                            user_email=%s,
-                            updated_date=NOW(),
-                            updated_by='System'
-                        WHERE user_urn=%s
-                    """, (access_token, user_name, user_email, user_sub))
-                    mysql.connection.commit()
-                    
-                    user_id = existing_user['id']
-                    print(f"[DEBUG] User signed in successfully. User ID: {user_id}")
-                    flash(f"✅ Welcome back, {user_name}!", "success")
-                else:
-                    # New user - INSERT (Sign Up)
-                    print(f"[DEBUG] New user - Creating account")
-                    cur.execute("""
-                        INSERT INTO linkedin_tokens 
-                        (user_urn, access_token, user_name, user_email, added_by, added_date, created_at)
-                        VALUES (%s, %s, %s, %s, 'System', NOW(), NOW())
-                    """, (user_sub, access_token, user_name, user_email))
-                    mysql.connection.commit()
-                    user_id = cur.lastrowid
-                    
-                    print(f"[DEBUG] New user created with ID: {user_id}")
-                    flash(f"✅ Welcome {user_name}! Your account has been created.", "success")
+        cur = mysql.connection.cursor()
 
-                cur.close()
+        # Case 1: Existing logged-in (form signup) user linking LinkedIn
+        if 'user_id' in session:
+            print(f"[DEBUG] Linking LinkedIn to existing user_id: {session['user_id']}")
+            cur.execute("""
+                UPDATE linkedin_tokens
+                SET user_urn=%s,
+                    access_token=%s,
+                    user_name=%s,
+                    user_email=%s,
+                    updated_by='System',
+                    updated_date=NOW()
+                WHERE id=%s
+            """, (user_sub, access_token, user_name, user_email, session['user_id']))
+            mysql.connection.commit()
+            cur.close()
 
-                # Set session variables
-                session['user_id'] = user_id
-                session['linkedin_token'] = access_token
-                session['linkedin_user'] = user_name
-                session['linkedin_user_urn'] = user_sub
-                session['user_email'] = user_email
-                
-                print(f"[DEBUG] Session set for user: {user_name} (ID: {user_id})")
-                
-            except Exception as db_error:
-                print(f"[ERROR] Database error: {db_error}")
-                print(traceback.format_exc())
-                flash(f"❌ Database error: {str(db_error)}", "danger")
-                return redirect(url_for('signin'))
+            # Update session
+            session['linkedin_token'] = access_token
+            session['linkedin_user_urn'] = user_sub
+            session['linkedin_user'] = user_name
+            session['user_email'] = user_email
+
+            print(f"[DEBUG] LinkedIn linked successfully for user_id={session['user_id']}")
+            flash("✅ LinkedIn verified successfully! You can now access all features.", "success")
+            return redirect(url_for('generate_text'))
+
+        # Case 2: User logging in directly via LinkedIn
+        cur.execute("SELECT * FROM linkedin_tokens WHERE user_urn=%s", (user_sub,))
+        existing_user = cur.fetchone()
+
+        if existing_user:
+            print(f"[DEBUG] Existing LinkedIn user found: ID={existing_user['id']}")
+            cur.execute("""
+                UPDATE linkedin_tokens
+                SET access_token=%s,
+                    user_name=%s,
+                    user_email=%s,
+                    updated_by='System',
+                    updated_date=NOW()
+                WHERE user_urn=%s
+            """, (access_token, user_name, user_email, user_sub))
+            mysql.connection.commit()
+            user_id = existing_user['id']
+            flash(f"✅ Welcome back, {user_name}!", "success")
 
         else:
-            print(f"[ERROR] Failed to fetch LinkedIn profile: {profile_response.status_code}")
-            
-            # Try to extract user info from id_token as fallback
-            id_token = token_data.get('id_token')
-            if id_token:
-                try:
-                    parts = id_token.split('.')
-                    if len(parts) >= 2:
-                        payload = parts[1]
-                        padding = 4 - (len(payload) % 4)
-                        if padding != 4:
-                            payload += '=' * padding
-                        
-                        decoded = base64.urlsafe_b64decode(payload)
-                        token_info = json.loads(decoded)
-                        print(f"[DEBUG] Decoded id_token payload: {token_info}")
-                        
-                        user_sub = token_info.get('sub')
-                        user_name = token_info.get('name', 'LinkedIn User')
-                        user_email = token_info.get('email', '')
-                        
-                        if user_sub:
-                            print(f"[DEBUG] Found user ID in id_token: {user_sub}")
-                            
-                            try:
-                                cur = mysql.connection.cursor()
-                                cur.execute("SELECT * FROM linkedin_tokens WHERE user_urn=%s", (user_sub,))
-                                existing_user = cur.fetchone()
-                                
-                                if existing_user:
-                                    cur.execute("""
-                                        UPDATE linkedin_tokens
-                                        SET access_token=%s, user_name=%s, user_email=%s,
-                                            updated_by='System', updated_date=NOW(), updated_date=NOW()
-                                        WHERE user_urn=%s
-                                    """, (access_token, user_name, user_email, user_sub))
-                                    user_id = existing_user['id']
-                                    flash(f"✅ Welcome back, {user_name}!", "success")
-                                else:
-                                    cur.execute("""
-                                        INSERT INTO linkedin_tokens 
-                                        (user_urn, access_token, user_name, user_email, added_by, added_date, created_at)
-                                        VALUES (%s, %s, %s, %s, 'System', NOW(), NOW())
-                                    """, (user_sub, access_token, user_name, user_email))
-                                    user_id = cur.lastrowid
-                                    flash(f"✅ Welcome {user_name}! Your account has been created.", "success")
-                                
-                                mysql.connection.commit()
-                                cur.close()
-                                
-                                session['user_id'] = user_id
-                                session['linkedin_token'] = access_token
-                                session['linkedin_user'] = user_name
-                                session['linkedin_user_urn'] = user_sub
-                                session['user_email'] = user_email
-                                
-                                print(f"[DEBUG] Saved token from id_token for user_urn={user_sub}")
-                            except Exception as e:
-                                print(f"[WARNING] Could not save token from id_token: {e}")
-                                flash("❌ Failed to retrieve LinkedIn profile.", "danger")
-                                return redirect(url_for('signin'))
-                        else:
-                            flash("❌ Failed to retrieve LinkedIn profile.", "danger")
-                            return redirect(url_for('signin'))
-                except Exception as e:
-                    print(f"[WARNING] Could not decode id_token: {e}")
-                    flash("❌ Failed to retrieve LinkedIn profile.", "danger")
-                    return redirect(url_for('signin'))
-            else:
-                flash("❌ Failed to retrieve LinkedIn profile.", "danger")
-                return redirect(url_for('signin'))
+            print("[DEBUG] New LinkedIn user - creating record.")
+            cur.execute("""
+                INSERT INTO linkedin_tokens
+                (user_urn, access_token, user_name, user_email, added_by, added_date, updated_by, updated_date)
+                VALUES (%s, %s, %s, %s, 'System', NOW(), 'System', NOW())
+            """, (user_sub, access_token, user_name, user_email))
+            mysql.connection.commit()
+            user_id = cur.lastrowid
+            flash(f"✅ Welcome {user_name}! Your account has been created via LinkedIn.", "success")
+
+        cur.close()
+
+        # Update session for both cases
+        session['user_id'] = user_id
+        session['linkedin_token'] = access_token
+        session['linkedin_user'] = user_name
+        session['linkedin_user_urn'] = user_sub
+        session['user_email'] = user_email
+
+        print(f"[DEBUG] Session initialized for LinkedIn user: {user_name} (ID={user_id})")
 
     except Exception as e:
-        print(f"[ERROR] Exception during profile fetch: {e}")
+        print(f"[ERROR] Exception during LinkedIn profile handling: {e}")
         print(traceback.format_exc())
-        flash(f"❌ Error: {str(e)}", "danger")
+        flash(f"❌ Error during LinkedIn login: {str(e)}", "danger")
         return redirect(url_for('signin'))
 
     print("=== [DEBUG] /linkedin/callback END - Redirecting to generate_text ===\n")
@@ -417,7 +386,6 @@ def linkedin_callback():
 # ================================
 # SCHEDULED POSTS BACKGROUND JOB
 # ================================
-
 @app.route('/run_scheduled_posts')
 def run_scheduled_posts():
     """Background job to post scheduled content to LinkedIn"""
@@ -777,7 +745,6 @@ def save_schedule():
 
         if post_date and post_content:
             try:
-                # Current timestamp for added_date and updated_date
                 now = datetime.now()
 
                 cursor = mysql.connection.cursor()
@@ -805,7 +772,9 @@ def save_schedule():
 # ROUTE: View all scheduled posts
 # -------------------------------
 @app.route("/view_posts")
+@login_required
 def view_posts():
+
     auth_urn = session.get('linkedin_user_urn')
 
     cur = mysql.connection.cursor()
@@ -813,18 +782,13 @@ def view_posts():
     posts = cur.fetchall()
     cur.close()
 
-    # Flatten posts into one list with proper date
     all_posts = []
     for post in posts:
-        # Use scheduled_time if available, else post_date
         post_date = post.get("scheduled_time") or post.get("post_date")
         post["display_date"] = post_date
         all_posts.append(post)
 
-    print("All Posts:", all_posts)
-
     return render_template("view_posts.html", all_posts=all_posts)
-
 
 # -------------------------------
 # ROUTE: Update existing post
@@ -941,7 +905,6 @@ def post_to_linkedin():
             return redirect(url_for('generate_text'))
         
         # Step 2: Post using UGC Posts API (v2) - Most stable
-        print("\n[STEP 2] Posting to LinkedIn UGC API...")
         post_url = "https://api.linkedin.com/v2/ugcPosts"
         headers_post = {
             "Authorization": f"Bearer {access_token}",
@@ -969,7 +932,6 @@ def post_to_linkedin():
         import json
         print(f"[DEBUG] Headers: {headers_post}")
         print(f"[DEBUG] Payload:")
-        print(json.dumps(post_data, indent=2))
         
         post_response = requests.post(
             post_url,
@@ -984,7 +946,7 @@ def post_to_linkedin():
         
         # Step 3: Handle response
         if post_response.status_code in [200, 201]:
-            print("[SUCCESS] ✅ Post created successfully on LinkedIn!")
+            print("[SUCCESS] Post created successfully on LinkedIn!")
             try:
                 response_data = post_response.json()
                 post_id = response_data.get('id', 'unknown')
@@ -994,7 +956,7 @@ def post_to_linkedin():
             
             flash("✅ Successfully posted to LinkedIn!", "success")
         else:
-            print(f"[ERROR] ❌ Failed to create LinkedIn post")
+            print(f"[ERROR] Failed to create LinkedIn post")
             
             try:
                 error_data = post_response.json()
