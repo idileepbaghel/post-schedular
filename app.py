@@ -1,5 +1,6 @@
 import io
 import os
+import random as py_random
 from flask import Flask, render_template, request, flash, redirect, url_for, session, jsonify
 from dotenv import load_dotenv
 from flask_mysqldb import MySQL
@@ -14,9 +15,7 @@ import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
-import sys
 import traceback
-import json
 import urllib.parse
 import secrets
 
@@ -827,17 +826,23 @@ def save_schedule():
 
                 # If an image was uploaded
                 if image_file and image_file.filename:
-                    # Create unique image filename using datetime + post_id
-                    timestamp = now.strftime("%Y%m%d_%H%M%S")
+                    # Ensure upload directory exists
+                    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+                    # Generate unique filename: date + time + 3 random digits + post_id
+                    now = datetime.now()
+                    timestamp = now.strftime("%Y%m%d%H%M%S")
+                    random_digits = f"{py_random.randint(100, 999)}"  # ✅ Correct usage
+
                     original_filename = secure_filename(image_file.filename)
                     ext = os.path.splitext(original_filename)[1]
-                    image_filename = f"{timestamp}_{post_id}{ext}"
+                    image_filename = f"{timestamp}{random_digits}{post_id}{ext}"
 
                     # Save the file
                     image_path = os.path.join(UPLOAD_FOLDER, image_filename)
                     image_file.save(image_path)
 
-                    # Update DB record with image filename
+                    # Update DB record with just the filename
                     cursor.execute("""
                         UPDATE scheduled_posts
                         SET image = %s, updated_date = NOW()
@@ -845,7 +850,8 @@ def save_schedule():
                     """, (image_filename, post_id))
                     mysql.connection.commit()
 
-                    print(f"[DEBUG] Image saved as {image_filename}")
+                    print(f"[DEBUG] Image saved as {image_filename} in {UPLOAD_FOLDER}")
+
 
                 saved_count += 1
                 print(f"[DEBUG] Saved post ID={post_id} with author_urn={author_urn}")
