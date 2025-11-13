@@ -388,23 +388,22 @@ def linkedin_callback():
 # ================================
 @app.route('/run_scheduled_posts')
 def run_scheduled_posts():
-    """Background job to post scheduled content to LinkedIn"""
+    """Background job to post scheduled content (text + image) to LinkedIn"""
     print(f"[{datetime.now()}] Checking for posts to publish...")
 
     try:
         with app.app_context():
             cursor = mysql.connection.cursor()
-
             cursor.execute("""
                 SELECT * FROM scheduled_posts 
-                WHERE DATE(post_date) = CURDATE() AND posted = 0 
+                WHERE DATE(post_date) = CURDATE() AND posted = 0
             """)
             posts = cursor.fetchall()
 
             if not posts:
                 print("No new posts to publish.")
                 cursor.close()
-                return jsonify({    
+                return jsonify({
                     "success": True,
                     "message": "No new posts to publish.",
                     "posts_processed": 0
@@ -419,9 +418,11 @@ def run_scheduled_posts():
                 post_id = post["id"]
                 author_urn = post["author_urn"]
                 content = post["content"]
+                image_name = post.get("image")
 
                 print(f"\nPreparing to post ID={post_id} for author={author_urn}")
 
+                # Get LinkedIn access token
                 cursor.execute("SELECT access_token FROM linkedin_tokens WHERE user_urn = %s", (author_urn,))
                 token_row = cursor.fetchone()
 
@@ -437,17 +438,63 @@ def run_scheduled_posts():
 
                 headers = {
                     "Authorization": f"Bearer {access_token}",
-                    "Content-Type": "application/json",
                     "X-Restli-Protocol-Version": "2.0.0"
                 }
 
+                media_category = "NONE"
+                asset_urn = None
+
+                # === STEP 1: Upload image to LinkedIn (if available) ===
+                if image_name:
+                    image_path = os.path.join("static", "uploaded_post_img", image_name)
+                    if os.path.exists(image_path):
+                        print(f"[UPLOAD] Uploading image for post {post_id} ({image_name})")
+
+                        # Request upload URL from LinkedIn
+                        register_url = "https://api.linkedin.com/v2/assets?action=registerUpload"
+                        register_body = {
+                            "registerUploadRequest": {
+                                "owner": f"urn:li:person:{author_urn}",
+                                "recipes": ["urn:li:digitalmediaRecipe:feedshare-image"],
+                                "serviceRelationships": [
+                                    {
+                                        "relationshipType": "OWNER",
+                                        "identifier": "urn:li:userGeneratedContent"
+                                    }
+                                ]
+                            }
+                        }
+
+                        reg_response = requests.post(register_url, headers={**headers, "Content-Type": "application/json"}, json=register_body)
+                        if reg_response.status_code in [200, 201]:
+                            reg_json = reg_response.json()
+                            upload_url = reg_json["value"]["uploadMechanism"]["com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"]["uploadUrl"]
+                            asset_urn = reg_json["value"]["asset"]
+                            print(f"[UPLOAD] Got upload URL for asset {asset_urn}")
+
+                            # Upload the actual image
+                            with open(image_path, "rb") as img_file:
+                                upload_resp = requests.put(upload_url, headers={"Authorization": f"Bearer {access_token}", "Content-Type": "image/jpeg"}, data=img_file)
+
+                            if upload_resp.status_code not in [200, 201]:
+                                print(f"[UPLOAD ERROR] Failed to upload image: {upload_resp.text}")
+                                asset_urn = None
+                            else:
+                                print("[UPLOAD] Image successfully uploaded.")
+                                media_category = "IMAGE"
+                        else:
+                            print(f"[REGISTER ERROR] Failed to register upload: {reg_response.text}")
+                    else:
+                        print(f"[SKIP] Image not found at path: {image_path}")
+
+                # === STEP 2: Prepare the UGC post body ===
                 data = {
                     "author": f"urn:li:person:{author_urn}",
                     "lifecycleState": "PUBLISHED",
                     "specificContent": {
                         "com.linkedin.ugc.ShareContent": {
                             "shareCommentary": {"text": content},
-                            "shareMediaCategory": "NONE"
+                            "shareMediaCategory": media_category,
                         }
                     },
                     "visibility": {
@@ -455,10 +502,24 @@ def run_scheduled_posts():
                     }
                 }
 
-                response = requests.post("https://api.linkedin.com/v2/ugcPosts", headers=headers, json=data)
+                # Add image asset if available
+                if asset_urn and media_category == "IMAGE":
+                    data["specificContent"]["com.linkedin.ugc.ShareContent"]["media"] = [
+                        {
+                            "status": "READY",
+                            "media": asset_urn
+                        }
+                    ]
 
-                if response.status_code in [200, 201]:
-                    print(f"Successfully posted ID={post_id}")
+                # === STEP 3: Post to LinkedIn ===
+                post_response = requests.post(
+                    "https://api.linkedin.com/v2/ugcPosts",
+                    headers={**headers, "Content-Type": "application/json"},
+                    json=data
+                )
+
+                if post_response.status_code in [200, 201]:
+                    print(f"[SUCCESS] Posted ID={post_id} successfully.")
 
                     cursor.execute("""
                         UPDATE scheduled_posts 
@@ -469,23 +530,22 @@ def run_scheduled_posts():
                         WHERE id = %s
                     """, (post_id,))
                     mysql.connection.commit()
-                    
+
                     successful_posts.append({
                         "post_id": post_id,
                         "author_urn": author_urn
                     })
-
                 else:
-                    print(f"Failed to post ID={post_id}: {response.status_code} - {response.text}")
+                    print(f"[ERROR] Failed to post ID={post_id}: {post_response.status_code} - {post_response.text}")
                     failed_posts.append({
                         "post_id": post_id,
-                        "status_code": response.status_code,
-                        "error": response.text
+                        "status_code": post_response.status_code,
+                        "error": post_response.text
                     })
 
             cursor.close()
-            print("\nDone checking for scheduled posts.\n")
-            
+            print("\n Done checking for scheduled posts.\n")
+
             return jsonify({
                 "success": True,
                 "message": "Scheduled posts processing completed.",
@@ -716,6 +776,11 @@ def add_post():
 # ROUTE: Save generated day-wise schedule to DB
 # -------------------------------
 from datetime import datetime
+from werkzeug.utils import secure_filename
+
+# Ensure upload folder exists
+UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploaded_post_img')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 @app.route('/save_schedule', methods=['POST'])
 def save_schedule():
@@ -726,7 +791,6 @@ def save_schedule():
         flash("🔗 Please connect to LinkedIn first.", "warning")
         return redirect(url_for('linkedin_login'))
 
-    # Get author_urn from session
     author_urn = session.get('linkedin_user_urn')
     print(f"[DEBUG] Author URN for saved posts: {author_urn}")
 
@@ -739,34 +803,62 @@ def save_schedule():
     added_by = "AI Generator"
 
     saved_count = 0
+    cursor = mysql.connection.cursor()
+
     for i in range(1, total_posts + 1):
         post_date = request.form.get(f'post_date_{i}')
         post_content = request.form.get(f'post_content_{i}')
+        image_file = request.files.get(f'image_{i}')  # Get uploaded image
 
         if post_date and post_content:
             try:
                 now = datetime.now()
+                image_filename = None
 
-                cursor = mysql.connection.cursor()
+                # Insert post first (so we can get its auto-increment ID)
                 cursor.execute("""
                     INSERT INTO scheduled_posts 
                     (post_date, content, added_by, author_urn, posted, added_date, updated_by, updated_date)
                     VALUES (%s, %s, %s, %s, %s, %s, NULL, %s)
                 """, (post_date, post_content.strip(), added_by, author_urn, 0, now, now))
                 mysql.connection.commit()
-                cursor.close()
+
+                post_id = cursor.lastrowid  # get the auto increment ID
+
+                # If an image was uploaded
+                if image_file and image_file.filename:
+                    # Create unique image filename using datetime + post_id
+                    timestamp = now.strftime("%Y%m%d_%H%M%S")
+                    original_filename = secure_filename(image_file.filename)
+                    ext = os.path.splitext(original_filename)[1]
+                    image_filename = f"{timestamp}_{post_id}{ext}"
+
+                    # Save the file
+                    image_path = os.path.join(UPLOAD_FOLDER, image_filename)
+                    image_file.save(image_path)
+
+                    # Update DB record with image filename
+                    cursor.execute("""
+                        UPDATE scheduled_posts
+                        SET image = %s, updated_date = NOW()
+                        WHERE id = %s
+                    """, (image_filename, post_id))
+                    mysql.connection.commit()
+
+                    print(f"[DEBUG] Image saved as {image_filename}")
+
                 saved_count += 1
-                print(f"[DEBUG] Saved post with author_urn={author_urn} at {now}")
+                print(f"[DEBUG] Saved post ID={post_id} with author_urn={author_urn}")
+
             except Exception as e:
                 safe_error = str(e).encode("utf-8", "ignore").decode("utf-8", "ignore")
                 print(f"[ERROR] Failed to save post: {safe_error}")
                 flash(f"❌ Error saving post: {safe_error}", "danger")
                 continue
 
+    cursor.close()
     flash(f"✅ {saved_count} post(s) saved successfully!", "success")
     return redirect(url_for('view_posts'))
-
-
 
 # -------------------------------
 # ROUTE: View all scheduled posts

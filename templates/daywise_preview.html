@@ -96,6 +96,33 @@
     box-shadow: 0 0 0 3px rgba(26, 139, 168, 0.1);
   }
 
+  .image-upload-container {
+    margin-top: 16px;
+  }
+
+  .image-upload-label {
+    font-weight: 600;
+    color: #0f5f7a;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .form-control-file {
+    display: block;
+    width: 100%;
+    background: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #e1e8ed;
+  }
+
+  .file-name {
+    margin-top: 6px;
+    font-size: 14px;
+    color: #1a8ba8;
+    font-style: italic;
+  }
+
   .btn-actions {
     display: flex;
     justify-content: center;
@@ -163,55 +190,20 @@
     font-size: 16px;
     text-align: center;
   }
-
-  @media (max-width: 768px) {
-    .daywise-content-container {
-      padding: 15px;
-    }
-
-    .header-banner {
-      padding: 20px 25px;
-    }
-
-    .header-banner h2 {
-      font-size: 24px;
-    }
-
-    .card-header-custom {
-      padding: 15px 20px;
-      font-size: 16px;
-      flex-direction: column;
-      gap: 8px;
-      align-items: flex-start;
-    }
-
-    .card-body-custom {
-      padding: 18px 20px;
-    }
-
-    .btn-actions {
-      flex-direction: column;
-    }
-
-    .btn-custom {
-      width: 100%;
-      justify-content: center;
-    }
-  }
 </style>
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="position-fixed top-0 end-0 p-3" style="z-index: 11;">
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-        {% endfor %}
-      </div>
-    {% endif %}
-  {% endwith %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 11;">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
 
 <div class="daywise-content-container">
   <div class="header-banner">
@@ -220,7 +212,7 @@
   </div>
 
   {% if daywise_content %}
-  <form method="POST" action="{{ url_for('save_schedule') }}">
+  <form method="POST" action="{{ url_for('save_schedule') }}" enctype="multipart/form-data">
     {% for day in daywise_content %}
     <div class="content-card">
       <div class="card-header-custom">
@@ -229,10 +221,15 @@
       </div>
 
       <div class="card-body-custom">
-        <textarea name="post_content_{{ loop.index }}" 
-                  class="form-control" 
-                  rows="8">{{ day.text }}</textarea>
+        <textarea name="post_content_{{ loop.index }}" class="form-control" rows="8">{{ day.text }}</textarea>
         <input type="hidden" name="post_date_{{ loop.index }}" value="{{ day.date }}">
+
+        <!-- Image Upload Field -->
+        <div class="image-upload-container">
+          <label class="image-upload-label">🖼️ Post Image (Feed) — JPG, PNG, GIF — Max 5 MB (1200×627 px recommended)</label>
+          <input type="file" class="form-control-file" name="image_{{ loop.index }}" accept=".jpg,.jpeg,.png,.gif" onchange="showFileName(this)">
+          <div class="file-name" id="fileName_{{ loop.index }}"></div>
+        </div>
       </div>
     </div>
     {% endfor %}
@@ -259,5 +256,13 @@
   <div class="alert-custom">No content found. Please generate some first.</div>
   {% endif %}
 </div>
+
+<script>
+  function showFileName(input) {
+    const id = input.name.split('_')[1];
+    const fileName = input.files.length > 0 ? input.files[0].name : '';
+    document.getElementById('fileName_' + id).textContent = fileName ? `Selected: ${fileName}` : '';
+  }
+</script>
 
 {% endblock %}
