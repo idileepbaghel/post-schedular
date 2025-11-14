@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container text-center mt-5">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 11;">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+    <h4>Verify Your one of your Social Account</h4>
+    <p>To use our services, please connect your Social account.</p>
+    <a href="{{ url_for('linkedin_login') }}" class="btn btn-primary mt-3">
+        <i class="fab fa-linkedin"></i> Connect LinkedIn
+    </a>
+</div>
+{% endblock %}
