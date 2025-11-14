@@ -298,6 +298,10 @@ def linkedin_callback():
         user_sub = profile_data.get("sub")
         user_name = profile_data.get("name", "LinkedIn User")
         user_email = profile_data.get("email", "")
+        user_pic = profile_data.get("picture", "")
+
+        
+        session['user_pic'] = user_pic
 
         if not user_sub:
             print("[ERROR] Missing user_sub in LinkedIn profile.")
@@ -315,7 +319,7 @@ def linkedin_callback():
                     access_token=%s,
                     user_name=%s,
                     user_email=%s,
-                    updated_by='System',
+                    updated_by='System',    
                     updated_date=NOW()
                 WHERE id=%s
             """, (user_sub, access_token, user_name, user_email, session['user_id']))
@@ -567,7 +571,6 @@ def run_scheduled_posts():
 # ================================
 # MAIN CONTENT GENERATION ROUTES
 # ================================
-
 @app.route('/', methods=['GET', 'POST'])
 @login_required
 def generate_text():
@@ -740,7 +743,6 @@ def clear_and_generate():
 # ================================
 # SCHEDULED POSTS MANAGEMENT
 # ================================
-
 @app.route('/add_post', methods=['GET', 'POST'])
 @login_required
 def add_post():
@@ -782,6 +784,7 @@ UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploaded_post_img')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 @app.route('/save_schedule', methods=['POST'])
+@login_required
 def save_schedule():
     print("\n=== [DEBUG] /save_schedule ROUTE CALLED ===")
     print(f"[DEBUG] Session keys: {list(session.keys())}")
@@ -874,6 +877,8 @@ def save_schedule():
 def view_posts():
 
     auth_urn = session.get('linkedin_user_urn')
+    user_pic = session.get('user_pic') 
+    print(f"[DEBUG] User picture URL set in session: {user_pic}")
 
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM scheduled_posts WHERE author_urn = %s", (auth_urn,))
@@ -886,7 +891,7 @@ def view_posts():
         post["display_date"] = post_date
         all_posts.append(post)
 
-    return render_template("view_posts.html", all_posts=all_posts)
+    return render_template("view_posts.html", all_posts=all_posts, user_pic=user_pic)
 
 # -------------------------------
 # ROUTE: Update existing post
@@ -923,7 +928,6 @@ def update_post(post_id):
         return redirect(url_for('view_posts'))
 
     return render_template('update_post.html', post=post)
-
 
 @app.route('/post_to_linkedin', methods=['POST'])
 def post_to_linkedin():
@@ -1097,7 +1101,6 @@ def post_to_linkedin():
     
     return redirect(url_for('generate_text'))
     
-
 @app.route('/generate_image', methods=['POST','GET'])
 def generate_image():
     prompt = request.form.get('prompt', "").strip()

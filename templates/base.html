@@ -20,6 +20,38 @@
   <!-- Custom CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}"> -->
+
+  <style>
+      body::before {
+    content: '';
+    position: fixed;
+    top: -100px;
+    right: -100px;
+    width: 400px;
+    height: 400px;
+    background: #FEC320;
+    opacity: 0.1;
+    border-radius: 50%;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -150px;
+    left: -150px;
+    width: 500px;
+    height: 500px;
+    background: #FEC320;
+    opacity: 0.08;
+    border-radius: 50%;
+    z-index: 0;
+  }
+
+  .fw-bold {
+    color: #125578;
+  }
+  </style>
 </head>
 <body class="bg-white text-dark">
 
@@ -31,12 +63,15 @@
       </span>
 
       <div class="ms-auto dropdown">
-        <button class="btn dropdown-toggle d-flex align-items-center"
-                id="profileDropdown"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-                style="width: 42px; height: 42px; justify-content: center;">
-          <i class="bi bi-person-circle fs-5"></i>
+        <button class="btn dropdown-toggle d-flex align-items-center p-0 border-0 bg-transparent ms-3"
+          id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false"
+          style="width: 42px; height: 42px; border-radius: 50%; overflow: hidden;">
+          {% if session.get('user_pic') %}
+          <img src="{{ session['user_pic'] }}" alt="Profile"
+            style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
+          {% else %}
+          <i class="bi bi-person-circle fs-5 text-secondary"></i>
+          {% endif %}
         </button>
         <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="profileDropdown">
           <li>

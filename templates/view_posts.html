@@ -325,9 +325,9 @@
   <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
     <div class="modal-content linkedin-card">
       <div class="linkedin-card-header">
-        <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" class="linkedin-avatar" alt="User Avatar">
+        <img src="{{ session.get('user_pic', 'https://cdn-icons-png.flaticon.com/512/847/847969.png') }}" class="linkedin-avatar" alt="User Avatar">
         <div>
-          <h6 class="mb-0">{{ session.get('user_name', 'You') }}</h6>
+          <h6 class="mb-0">{{ session.get('linkedin_user', 'You') }}</h6>
           <small class="text-muted">Student @ University of Lucknow · Now · 🌐</small>
         </div>
       </div>
