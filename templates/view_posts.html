@@ -282,7 +282,7 @@
           <td>{{ loop.index }}</td>
           <td>
             <button type="button" class="btn btn-outline-primary btn-sm view-post" data-toggle="modal"
-              data-target="#postModal" data-content="{{ post.content|escape }}">
+              data-target="#postModal" data-content="{{ post.content|escape }}" data-images="{{ post.image_urls | tojson }}">
               View Post
             </button>
           </td>
@@ -320,7 +320,6 @@
 
 </div>
 
-<!-- LinkedIn-style Post Modal -->
 <div class="modal fade" id="postModal" tabindex="-1" role="dialog">
   <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
     <div class="modal-content linkedin-card">
@@ -335,6 +334,28 @@
       <div class="linkedin-card-body">
         <p id="postModalContent"></p>
         <p id="postModalHashtags" class="linkedin-hashtags mt-2"></p>
+        
+        <!-- Image Carousel -->
+        <div id="postImageCarousel" class="carousel slide mt-3 d-none" data-ride="carousel">
+          <div class="carousel-inner" id="carouselImages">
+            <!-- Images will be inserted here dynamically -->
+          </div>
+          
+          <!-- Carousel controls (only show if more than 1 image) -->
+          <a class="carousel-control-prev" href="#postImageCarousel" role="button" data-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="sr-only">Previous</span>
+          </a>
+          <a class="carousel-control-next" href="#postImageCarousel" role="button" data-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="sr-only">Next</span>
+          </a>
+          
+          <!-- Indicators -->
+          <ol class="carousel-indicators" id="carouselIndicators">
+            <!-- Indicators will be inserted here dynamically -->
+          </ol>
+        </div>
       </div>
 
       <div class="linkedin-card-stats">
@@ -367,22 +388,101 @@
     });
   });
 
-  $('.view-post').on('click', function () {
+$('.view-post').on('click', function () {
     const content = $(this).data('content') || '';
-
-    // Extract hashtags (e.g., #Python, #Learning)
+    const imagesData = $(this).data('images');
+    
+    console.log('=== DEBUG START ===');
+    console.log('Raw images data:', imagesData);
+    console.log('Type of images data:', typeof imagesData);
+    console.log('Content:', content);
+    
+    // Extract hashtags
     const hashtags = content.match(/#\w+/g) || [];
-
-    // Remove hashtags from main content
     const cleanContent = content.replace(/#\w+/g, '').trim();
-
-    // Replace newlines with <br> to preserve line breaks
     const formattedContent = cleanContent.replace(/\n/g, '<br>');
 
-    // Set modal content
     $('#postModalContent').html(formattedContent);
     $('#postModalHashtags').text(hashtags.join(' '));
-  });
+
+    // Parse images
+    let images = [];
+    if (imagesData) {
+        // If it's already an array (parsed by jQuery)
+        if (Array.isArray(imagesData)) {
+            images = imagesData;
+            console.log('Images is already an array:', images);
+        } else if (typeof imagesData === 'string') {
+            try {
+                // Try parsing as JSON array first
+                images = JSON.parse(imagesData);
+                console.log('Parsed as JSON:', images);
+            } catch (e) {
+                // If not JSON, treat as comma-separated string
+                images = imagesData.split(',').map(img => img.trim()).filter(img => img);
+                console.log('Parsed as comma-separated:', images);
+            }
+        } else if (typeof imagesData === 'object') {
+            // It might already be parsed
+            images = imagesData;
+            console.log('Images is object:', images);
+        }
+    }
+    
+    console.log('Final images array:', images);
+    console.log('Images length:', images.length);
+    console.log('=== DEBUG END ===');
+
+    // Handle image carousel
+    if (images && images.length > 0) {
+        const $carouselInner = $('#carouselImages');
+        const $indicators = $('#carouselIndicators');
+        
+        console.log('Building carousel with', images.length, 'images');
+        
+        // Clear existing content
+        $carouselInner.empty();
+        $indicators.empty();
+        
+        // Add images to carousel
+        images.forEach((imageUrl, index) => {
+            const activeClass = index === 0 ? 'active' : '';
+            
+            console.log(`Adding image ${index}:`, imageUrl);
+            
+            // Add carousel item
+            const carouselItem = `
+                <div class="carousel-item ${activeClass}">
+                    <img src="${imageUrl}" class="d-block w-100 rounded" alt="Post image ${index + 1}" style="max-height: 500px; object-fit: contain;">
+                </div>
+            `;
+            $carouselInner.append(carouselItem);
+            
+            // Add indicator
+            $indicators.append(`
+                <li data-target="#postImageCarousel" data-slide-to="${index}" class="${activeClass}"></li>
+            `);
+        });
+        
+        // Show/hide carousel controls based on number of images
+        if (images.length > 1) {
+            $('.carousel-control-prev, .carousel-control-next').show();
+            $('#carouselIndicators').show();
+        } else {
+            $('.carousel-control-prev, .carousel-control-next').hide();
+            $('#carouselIndicators').hide();
+        }
+        
+        $('#postImageCarousel').removeClass('d-none');
+        console.log('Carousel should now be visible');
+    } else {
+        console.log('No images to display, hiding carousel');
+        $('#postImageCarousel').addClass('d-none');
+    }
+    
+    // Open modal
+    $('#postModal').modal('show');
+});
 </script>
 
 {% endblock %}

@@ -193,16 +193,16 @@
 </style>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    <div class="position-fixed top-0 end-0 p-3" style="z-index: 11;">
-      {% for category, message in messages %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-      {% endfor %}
-    </div>
-  {% endif %}
+{% if messages %}
+<div class="position-fixed top-0 end-0 p-3" style="z-index: 11;">
+  {% for category, message in messages %}
+  <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
 {% endwith %}
 
 <div class="daywise-content-container">
@@ -226,9 +226,11 @@
 
         <!-- Image Upload Field -->
         <div class="image-upload-container">
-          <label class="image-upload-label">🖼️ Post Image (Feed) — JPG, PNG, GIF — Max 5 MB (1200×627 px recommended)</label>
-          <input type="file" class="form-control-file" name="image_{{ loop.index }}" accept=".jpg,.jpeg,.png,.gif" onchange="showFileName(this)">
-          <div class="file-name" id="fileName_{{ loop.index }}"></div>
+          <label class="image-upload-label">🖼️ Post Image (Feed) — JPG, PNG, GIF — Max 5 MB (1200×627 px
+            recommended)</label>
+          <input type="file" class="form-control-file" name="images[]" accept=".jpg,.jpeg,.png,.gif" multiple
+            onchange="showFileNames(this)">
+          <div class="file-name" id="fileNames"></div>
         </div>
       </div>
     </div>
@@ -258,11 +260,23 @@
 </div>
 
 <script>
-  function showFileName(input) {
-    const id = input.name.split('_')[1];
-    const fileName = input.files.length > 0 ? input.files[0].name : '';
-    document.getElementById('fileName_' + id).textContent = fileName ? `Selected: ${fileName}` : '';
-  }
-</script>
+function showFileNames(input) {
+    let container = document.getElementById('fileNames');
+    container.innerHTML = '';
 
+    if (input.files.length > 5) {
+        container.innerHTML = "Please select only up to 5 images.";
+        input.value = "";
+        return;
+    }
+
+    let list = "<ul>";
+    for (let i = 0; i < input.files.length; i++) {
+        list += `<li>${input.files[i].name}</li>`;
+    }
+    list += "</ul>";
+
+    container.innerHTML = list;
+}
+</script>
 {% endblock %}

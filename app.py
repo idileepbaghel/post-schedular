@@ -25,18 +25,18 @@ app = Flask(__name__)
 
 # Database configuration
 # for development
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = ''
-app.config['MYSQL_DB'] = 'learntrail_content' 
-app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
+# app.config['MYSQL_HOST'] = 'localhost'
+# app.config['MYSQL_USER'] = 'root'
+# app.config['MYSQL_PASSWORD'] = ''
+# app.config['MYSQL_DB'] = 'learntrail_content' 
+# app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 
 # for production (uncomment when deploying)
-# app.config['MYSQL_HOST'] = 'localhost'
-# app.config['MYSQL_USER'] = 'learntrail_dbcontent'
-# app.config['MYSQL_PASSWORD'] = '(hmS-lZQYdsS.)MU'
-# app.config['MYSQL_DB'] = 'learntrail_content'
-# app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'learntrail_dbcontent'
+app.config['MYSQL_PASSWORD'] = '(hmS-lZQYdsS.)MU'
+app.config['MYSQL_DB'] = 'learntrail_content'
+app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 
 mysql = MySQL(app)
 scheduler = BackgroundScheduler()
@@ -45,7 +45,7 @@ app.secret_key = "dileep"
 # LinkedIn OAuth Configuration
 LINKEDIN_CLIENT_ID = os.getenv("LINKEDIN_CLIENT_ID")
 LINKEDIN_CLIENT_SECRET = os.getenv("LINKEDIN_CLIENT_SECRET")
-LINKEDIN_REDIRECT_URI = 'http://localhost:5500/linkedin/callback'
+LINKEDIN_REDIRECT_URI = 'https://connect.learntrail.co.in/linkedin/callback'
 
 print(f"LinkedIn Config: {LINKEDIN_CLIENT_ID}, {LINKEDIN_CLIENT_SECRET}, {LINKEDIN_REDIRECT_URI}")
 
@@ -391,7 +391,7 @@ def linkedin_callback():
 # ================================
 @app.route('/run_scheduled_posts')
 def run_scheduled_posts():
-    """Background job to post scheduled content (text + image) to LinkedIn"""
+    """Background job to post scheduled content (text + up to 5 images) to LinkedIn"""
     print(f"[{datetime.now()}] Checking for posts to publish...")
 
     try:
@@ -421,16 +421,25 @@ def run_scheduled_posts():
                 post_id = post["id"]
                 author_urn = post["author_urn"]
                 content = post["content"]
-                image_name = post.get("image")
+                
+                # Multiple image support (CSV format)
+                image_field = post.get("image")
+                image_list = [
+                    img.strip() for img in image_field.split(",")
+                    if img.strip()
+                ] if image_field else []
 
-                print(f"\nPreparing to post ID={post_id} for author={author_urn}")
+                # Limit max 5
+                image_list = image_list[:5]
 
-                # Get LinkedIn access token
+                print(f"\nPreparing Post ID={post_id} with {len(image_list)} image(s)")
+
+                # Fetch LinkedIn Access Token
                 cursor.execute("SELECT access_token FROM linkedin_tokens WHERE user_urn = %s", (author_urn,))
                 token_row = cursor.fetchone()
 
                 if not token_row:
-                    print(f"No access token found for author_urn={author_urn}, skipping...")
+                    print(f"No access token found for author_urn={author_urn}")
                     failed_posts.append({
                         "post_id": post_id,
                         "reason": "No access token found"
@@ -444,60 +453,69 @@ def run_scheduled_posts():
                     "X-Restli-Protocol-Version": "2.0.0"
                 }
 
-                media_category = "NONE"
-                asset_urn = None
+                # === STEP 1: Upload multiple images to LinkedIn ===
+                asset_list = []
 
-                # === STEP 1: Upload image to LinkedIn (if available) ===
-                if image_name:
-                    image_path = os.path.join("static", "uploaded_post_img", image_name)
-                    if os.path.exists(image_path):
-                        print(f"[UPLOAD] Uploading image for post {post_id} ({image_name})")
+                for img_name in image_list:
+                    image_path = os.path.join("static", "uploaded_post_img", img_name)
 
-                        # Request upload URL from LinkedIn
-                        register_url = "https://api.linkedin.com/v2/assets?action=registerUpload"
-                        register_body = {
-                            "registerUploadRequest": {
-                                "owner": f"urn:li:person:{author_urn}",
-                                "recipes": ["urn:li:digitalmediaRecipe:feedshare-image"],
-                                "serviceRelationships": [
-                                    {
-                                        "relationshipType": "OWNER",
-                                        "identifier": "urn:li:userGeneratedContent"
-                                    }
-                                ]
-                            }
+                    if not os.path.exists(image_path):
+                        print(f"[SKIP] Image not found: {image_path}")
+                        continue
+
+                    print(f"[UPLOAD] Registering upload for {img_name}")
+
+                    register_url = "https://api.linkedin.com/v2/assets?action=registerUpload"
+                    register_body = {
+                        "registerUploadRequest": {
+                            "owner": f"urn:li:person:{author_urn}",
+                            "recipes": ["urn:li:digitalmediaRecipe:feedshare-image"],
+                            "serviceRelationships": [
+                                {"relationshipType": "OWNER", "identifier": "urn:li:userGeneratedContent"}
+                            ]
                         }
+                    }
 
-                        reg_response = requests.post(register_url, headers={**headers, "Content-Type": "application/json"}, json=register_body)
-                        if reg_response.status_code in [200, 201]:
-                            reg_json = reg_response.json()
-                            upload_url = reg_json["value"]["uploadMechanism"]["com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"]["uploadUrl"]
-                            asset_urn = reg_json["value"]["asset"]
-                            print(f"[UPLOAD] Got upload URL for asset {asset_urn}")
+                    reg_response = requests.post(
+                        register_url,
+                        headers={**headers, "Content-Type": "application/json"},
+                        json=register_body
+                    )
 
-                            # Upload the actual image
-                            with open(image_path, "rb") as img_file:
-                                upload_resp = requests.put(upload_url, headers={"Authorization": f"Bearer {access_token}", "Content-Type": "image/jpeg"}, data=img_file)
+                    if reg_response.status_code not in [200, 201]:
+                        print(f"[REGISTER ERROR] {reg_response.text}")
+                        continue
 
-                            if upload_resp.status_code not in [200, 201]:
-                                print(f"[UPLOAD ERROR] Failed to upload image: {upload_resp.text}")
-                                asset_urn = None
-                            else:
-                                print("[UPLOAD] Image successfully uploaded.")
-                                media_category = "IMAGE"
-                        else:
-                            print(f"[REGISTER ERROR] Failed to register upload: {reg_response.text}")
+                    reg_json = reg_response.json()
+                    upload_url = reg_json["value"]["uploadMechanism"]["com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"]["uploadUrl"]
+                    asset_urn = reg_json["value"]["asset"]
+
+                    print(f"[UPLOAD] Got upload URL for asset {asset_urn}")
+
+                    # Upload actual image bytes
+                    with open(image_path, "rb") as img_file:
+                        upload_resp = requests.put(
+                            upload_url,
+                            headers={"Authorization": f"Bearer {access_token}", "Content-Type": "image/jpeg"},
+                            data=img_file
+                        )
+
+                    if upload_resp.status_code in [200, 201]:
+                        print(f"[UPLOAD] Successfully uploaded {img_name}")
+                        asset_list.append(asset_urn)
                     else:
-                        print(f"[SKIP] Image not found at path: {image_path}")
+                        print(f"[UPLOAD ERROR] {upload_resp.text}")
 
-                # === STEP 2: Prepare the UGC post body ===
+                # === STEP 2: Prepare LinkedIn Post Body ===
+                media_category = "IMAGE" if asset_list else "NONE"
+
                 data = {
                     "author": f"urn:li:person:{author_urn}",
                     "lifecycleState": "PUBLISHED",
                     "specificContent": {
                         "com.linkedin.ugc.ShareContent": {
                             "shareCommentary": {"text": content},
-                            "shareMediaCategory": media_category,
+                            "shareMediaCategory": media_category
                         }
                     },
                     "visibility": {
@@ -505,16 +523,14 @@ def run_scheduled_posts():
                     }
                 }
 
-                # Add image asset if available
-                if asset_urn and media_category == "IMAGE":
+                # Add all images into media array
+                if asset_list:
                     data["specificContent"]["com.linkedin.ugc.ShareContent"]["media"] = [
-                        {
-                            "status": "READY",
-                            "media": asset_urn
-                        }
+                        {"status": "READY", "media": asset}
+                        for asset in asset_list
                     ]
 
-                # === STEP 3: Post to LinkedIn ===
+                # === STEP 3: Publish post ===
                 post_response = requests.post(
                     "https://api.linkedin.com/v2/ugcPosts",
                     headers={**headers, "Content-Type": "application/json"},
@@ -522,24 +538,22 @@ def run_scheduled_posts():
                 )
 
                 if post_response.status_code in [200, 201]:
-                    print(f"[SUCCESS] Posted ID={post_id} successfully.")
+                    print(f"[SUCCESS] Successfully posted ID={post_id}")
 
                     cursor.execute("""
                         UPDATE scheduled_posts 
-                        SET posted = 1, 
-                            posted_at = NOW(), 
-                            updated_date = NOW(), 
+                        SET posted = 1,
+                            posted_at = NOW(),
+                            updated_date = NOW(),
                             updated_by = 'System'
                         WHERE id = %s
                     """, (post_id,))
                     mysql.connection.commit()
 
-                    successful_posts.append({
-                        "post_id": post_id,
-                        "author_urn": author_urn
-                    })
+                    successful_posts.append({"post_id": post_id, "author_urn": author_urn})
+
                 else:
-                    print(f"[ERROR] Failed to post ID={post_id}: {post_response.status_code} - {post_response.text}")
+                    print(f"[POST ERROR] {post_response.status_code} - {post_response.text}")
                     failed_posts.append({
                         "post_id": post_id,
                         "status_code": post_response.status_code,
@@ -547,7 +561,8 @@ def run_scheduled_posts():
                     })
 
             cursor.close()
-            print("\n Done checking for scheduled posts.\n")
+
+            print("\nCompleted scheduled post check.\n")
 
             return jsonify({
                 "success": True,
@@ -560,12 +575,12 @@ def run_scheduled_posts():
             }), 200
 
     except Exception as e:
-        print(f"Error during scheduled posting: {str(e)}")
+        print(f"\n[EXCEPTION] {str(e)}")
         print(traceback.format_exc())
         return jsonify({
             "success": False,
             "error": str(e),
-            "message": "An error occurred during scheduled posting."
+            "message": "Error during scheduled posting."
         }), 500
 
 # ================================
@@ -827,31 +842,41 @@ def save_schedule():
 
                 post_id = cursor.lastrowid  # get the auto increment ID
 
-                # If an image was uploaded
-                if image_file and image_file.filename:
-                    # Ensure upload directory exists
+                image_files = request.files.getlist("images[]")
+                saved_filenames = []
+
+                if image_files:
                     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-                    # Generate unique filename: date + time + 3 random digits + post_id
-                    now = datetime.now()
-                    timestamp = now.strftime("%Y%m%d%H%M%S")
-                    random_digits = f"{py_random.randint(100, 999)}"  # ✅ Correct usage
+                    for image_file in image_files[:5]:  # limit to 5
+                        if image_file and image_file.filename:
 
-                    original_filename = secure_filename(image_file.filename)
-                    ext = os.path.splitext(original_filename)[1]
-                    image_filename = f"{timestamp}{random_digits}{post_id}{ext}"
+                            now = datetime.now()
+                            timestamp = now.strftime("%Y%m%d%H%M%S")
+                            random_digits = f"{py_random.randint(100, 999)}"
 
-                    # Save the file
-                    image_path = os.path.join(UPLOAD_FOLDER, image_filename)
-                    image_file.save(image_path)
+                            original_filename = secure_filename(image_file.filename)
+                            ext = os.path.splitext(original_filename)[1]
+                            image_filename = f"{timestamp}{random_digits}{post_id}{ext}"
 
-                    # Update DB record with just the filename
+                            image_path = os.path.join(UPLOAD_FOLDER, image_filename)
+                            image_file.save(image_path)
+
+                            saved_filenames.append(image_filename)
+
+                            print(f"[DEBUG] Image saved as {image_filename}")
+
+                    # Store multiple filenames as CSV
+                    csv_filenames = ",".join(saved_filenames)
+
                     cursor.execute("""
                         UPDATE scheduled_posts
                         SET image = %s, updated_date = NOW()
                         WHERE id = %s
-                    """, (image_filename, post_id))
+                    """, (csv_filenames, post_id))
+
                     mysql.connection.commit()
+
 
                     print(f"[DEBUG] Image saved as {image_filename} in {UPLOAD_FOLDER}")
 
@@ -875,10 +900,8 @@ def save_schedule():
 @app.route("/view_posts")
 @login_required
 def view_posts():
-
     auth_urn = session.get('linkedin_user_urn')
     user_pic = session.get('user_pic') 
-    print(f"[DEBUG] User picture URL set in session: {user_pic}")
 
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM scheduled_posts WHERE author_urn = %s", (auth_urn,))
@@ -889,6 +912,25 @@ def view_posts():
     for post in posts:
         post_date = post.get("scheduled_time") or post.get("post_date")
         post["display_date"] = post_date
+
+        # Handle multiple images
+        image_data = post.get("image")  # Could be "img1.jpg" or "img1.jpg,img2.jpg,img3.jpg"
+        
+        if image_data:
+            # Split by comma if multiple images are stored together
+            image_names = [img.strip() for img in image_data.split(',') if img.strip()]
+            
+            # Build URLs for all images
+            post["image_urls"] = [
+                url_for('static', filename=f"upload_post_img/{img_name}")
+                for img_name in image_names
+            ]
+            print(f"[DEBUG] Post ID={post['id']} has {post['image_urls']} images")
+        else:
+            post["image_urls"] = []
+
+        print(f"{image_data} all images")
+
         all_posts.append(post)
 
     return render_template("view_posts.html", all_posts=all_posts, user_pic=user_pic)
@@ -1131,6 +1173,124 @@ def generate_image():
 
     except Exception as e:
         return render_template('image_generation.html', error=f"⚠️ Error: {str(e)}")
+    
+@app.route('/profile')
+@login_required
+def profile():
+    """Display user profile with all session data"""
+    
+    # Get all profile data from session
+    profile_data = {
+        'user_id': session.get('user_id'),
+        'user_name': session.get('linkedin_user', 'N/A'),
+        'user_email': session.get('user_email', 'N/A'),
+        'user_pic': session.get('user_pic', 'https://cdn-icons-png.flaticon.com/512/847/847969.png'),
+        'linkedin_user_urn': session.get('linkedin_user_urn'),
+        'has_linkedin': bool(session.get('linkedin_token') and session.get('linkedin_user_urn')),
+        'linkedin_verified': bool(session.get('linkedin_user_urn'))
+    }
+    
+    # Get additional stats from database
+    cur = mysql.connection.cursor()
+    
+    # Get total posts count
+    cur.execute("""
+        SELECT COUNT(*) as total_posts 
+        FROM scheduled_posts 
+        WHERE author_urn = %s
+    """, (profile_data['linkedin_user_urn'],))
+    post_stats = cur.fetchone()
+    profile_data['total_posts'] = post_stats['total_posts'] if post_stats else 0
+    
+    # Get scheduled posts count
+    cur.execute("""
+        SELECT COUNT(*) as scheduled_posts 
+        FROM scheduled_posts 
+        WHERE author_urn = %s AND posted = '0'
+    """, (profile_data['linkedin_user_urn'],))
+    scheduled_stats = cur.fetchone()
+    profile_data['scheduled_posts'] = scheduled_stats['scheduled_posts'] if scheduled_stats else 0
+    
+    # Get published posts count
+    cur.execute("""
+        SELECT COUNT(*) as published_posts 
+        FROM scheduled_posts 
+        WHERE author_urn = %s AND posted = '1'
+    """, (profile_data['linkedin_user_urn'],))
+    published_stats = cur.fetchone()
+    profile_data['published_posts'] = published_stats['published_posts'] if published_stats else 0
+    
+    # Get account creation date
+    cur.execute("""
+        SELECT added_date 
+        FROM linkedin_tokens 
+        WHERE id = %s
+    """, (profile_data['user_id'],))
+    account_info = cur.fetchone()
+    profile_data['account_created'] = account_info['added_date'] if account_info else None
+    
+    cur.close()
+    
+    return render_template('profile.html', profile=profile_data)
+
+
+@app.route('/update_profile', methods=['POST'])
+@login_required
+def update_profile():
+    """Update user profile information"""
+    
+    user_name = request.form.get('user_name', '').strip()
+    user_email = request.form.get('user_email', '').strip()
+    current_password = request.form.get('current_password', '')
+    new_password = request.form.get('new_password', '')
+    
+    if not user_name or not user_email:
+        flash("❌ Name and email are required.", "danger")
+        return redirect(url_for('profile'))
+    
+    cur = mysql.connection.cursor()
+    
+    # If changing password, verify current password first
+    if new_password:
+        if not current_password:
+            flash("❌ Current password is required to set a new password.", "danger")
+            return redirect(url_for('profile'))
+        
+        cur.execute("SELECT password FROM linkedin_tokens WHERE id = %s", (session['user_id'],))
+        user = cur.fetchone()
+        
+        if not user or not check_password_hash(user['password'], current_password):
+            flash("❌ Current password is incorrect.", "danger")
+            cur.close()
+            return redirect(url_for('profile'))
+        
+        # Update with new password
+        hashed_password = generate_password_hash(new_password)
+        cur.execute("""
+            UPDATE linkedin_tokens 
+            SET user_name = %s, user_email = %s, password = %s, 
+                updated_by = 'User', updated_date = NOW()
+            WHERE id = %s
+        """, (user_name, user_email, hashed_password, session['user_id']))
+        flash("✅ Profile and password updated successfully!", "success")
+    else:
+        # Update without changing password
+        cur.execute("""
+            UPDATE linkedin_tokens 
+            SET user_name = %s, user_email = %s, 
+                updated_by = 'User', updated_date = NOW()
+            WHERE id = %s
+        """, (user_name, user_email, session['user_id']))
+        flash("✅ Profile updated successfully!", "success")
+    
+    mysql.connection.commit()
+    cur.close()
+    
+    # Update session
+    session['linkedin_user'] = user_name
+    session['user_email'] = user_email
+    
+    return redirect(url_for('profile'))
 
 if __name__ == '__main__':
     app.run(debug=True, port=5500)
