@@ -25,18 +25,18 @@ app = Flask(__name__)
 
 # Database configuration
 # for development
-# app.config['MYSQL_HOST'] = 'localhost'
-# app.config['MYSQL_USER'] = 'root'
-# app.config['MYSQL_PASSWORD'] = ''
-# app.config['MYSQL_DB'] = 'learntrail_content' 
-# app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = ''
+app.config['MYSQL_DB'] = 'learntrail_content' 
+app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 
 # for production (uncomment when deploying)
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'learntrail_dbcontent'
-app.config['MYSQL_PASSWORD'] = '(hmS-lZQYdsS.)MU'
-app.config['MYSQL_DB'] = 'learntrail_content'
-app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
+# app.config['MYSQL_HOST'] = 'localhost'
+# app.config['MYSQL_USER'] = 'learntrail_dbcontent'
+# app.config['MYSQL_PASSWORD'] = '(hmS-lZQYdsS.)MU'
+# app.config['MYSQL_DB'] = 'learntrail_content'
+# app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 
 mysql = MySQL(app)
 scheduler = BackgroundScheduler()
@@ -45,7 +45,8 @@ app.secret_key = "dileep"
 # LinkedIn OAuth Configuration
 LINKEDIN_CLIENT_ID = os.getenv("LINKEDIN_CLIENT_ID")
 LINKEDIN_CLIENT_SECRET = os.getenv("LINKEDIN_CLIENT_SECRET")
-LINKEDIN_REDIRECT_URI = 'https://connect.learntrail.co.in/linkedin/callback'
+LINKEDIN_REDIRECT_URI = 'http://localhost:5500/linkedin/callback'
+# LINKEDIN_REDIRECT_URI = 'https://connect.learntrail.co.in/linkedin/callback'
 
 print(f"LinkedIn Config: {LINKEDIN_CLIENT_ID}, {LINKEDIN_CLIENT_SECRET}, {LINKEDIN_REDIRECT_URI}")
 
@@ -523,7 +524,7 @@ def run_scheduled_posts():
                     }
                 }
 
-                # Add all images into media array
+                # Add all images into media array 
                 if asset_list:
                     data["specificContent"]["com.linkedin.ugc.ShareContent"]["media"] = [
                         {"status": "READY", "media": asset}

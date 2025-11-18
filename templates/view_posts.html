@@ -5,37 +5,7 @@
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
 
-<!-- Bootstrap 4 JS and Popper.js -->
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-
-
 <style>
-  body::before {
-    content: '';
-    position: fixed;
-    top: -100px;
-    right: -100px;
-    width: 400px;
-    height: 400px;
-    background: #FEC320;
-    opacity: 0.1;
-    border-radius: 50%;
-    z-index: 0;
-  }
-
-  body::after {
-    content: '';
-    position: fixed;
-    bottom: -150px;
-    left: -150px;
-    width: 500px;
-    height: 500px;
-    background: #FEC320;
-    opacity: 0.08;
-    border-radius: 50%;
-    z-index: 0;
-  }
 
   .daywise-container {
     max-width: 1300px;
@@ -146,7 +116,6 @@
     font-size: 14px;
   }
 
-  /* === LinkedIn Modal Color Configurations === */
   :root {
     --linkedin-primary: #0a66c2;
     --linkedin-hover: #004182;
@@ -246,18 +215,18 @@
   }
 </style>
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-  <div class="position-fixed top-0 end-0 p-3" style="z-index: 11;">
-    {% for category, message in messages %}
-    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-      {{ message }}
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    {% endfor %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="position-fixed top-0 end-0 p-3" style="z-index: 11;">
+  {% for category, message in messages %}
+  <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
   </div>
-  {% endif %}
-  {% endwith %}
+  {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
 
 <div class="daywise-container">
   <div class="header-banner">
@@ -282,7 +251,8 @@
           <td>{{ loop.index }}</td>
           <td>
             <button type="button" class="btn btn-outline-primary btn-sm view-post" data-toggle="modal"
-              data-target="#postModal" data-content="{{ post.content|escape }}" data-images="{{ post.image_urls | tojson }}">
+              data-target="#postModal" data-content="{{ post.content|escape }}"
+              data-images="{{ post.image_urls | tojson }}">
               View Post
             </button>
           </td>
@@ -324,7 +294,8 @@
   <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
     <div class="modal-content linkedin-card">
       <div class="linkedin-card-header">
-        <img src="{{ session.get('user_pic', 'https://cdn-icons-png.flaticon.com/512/847/847969.png') }}" class="linkedin-avatar" alt="User Avatar">
+        <img src="{{ session.get('user_pic', 'https://cdn-icons-png.flaticon.com/512/847/847969.png') }}"
+          class="linkedin-avatar" alt="User Avatar">
         <div>
           <h6 class="mb-0">{{ session.get('linkedin_user', 'You') }}</h6>
           <small class="text-muted">Student @ University of Lucknow · Now · 🌐</small>
@@ -334,13 +305,13 @@
       <div class="linkedin-card-body">
         <p id="postModalContent"></p>
         <p id="postModalHashtags" class="linkedin-hashtags mt-2"></p>
-        
+
         <!-- Image Carousel -->
         <div id="postImageCarousel" class="carousel slide mt-3 d-none" data-ride="carousel">
           <div class="carousel-inner" id="carouselImages">
             <!-- Images will be inserted here dynamically -->
           </div>
-          
+
           <!-- Carousel controls (only show if more than 1 image) -->
           <a class="carousel-control-prev" href="#postImageCarousel" role="button" data-slide="prev">
             <span class="carousel-control-prev-icon" aria-hidden="true"></span>
@@ -350,7 +321,7 @@
             <span class="carousel-control-next-icon" aria-hidden="true"></span>
             <span class="sr-only">Next</span>
           </a>
-          
+
           <!-- Indicators -->
           <ol class="carousel-indicators" id="carouselIndicators">
             <!-- Indicators will be inserted here dynamically -->
@@ -369,10 +340,10 @@
       </div>
 
       <div class="linkedin-card-footer">
-        <button><i class="far fa-thumbs-up"></i> Like</button>
-        <button><i class="far fa-comment"></i> Comment</button>
-        <button><i class="fas fa-share"></i> Share</button>
-        <button><i class="far fa-paper-plane"></i> Send</button>
+        <button><i class="fa fa-thumbs-up"></i> Like</button>
+        <button><i class="fa fa-comment"></i> Comment</button>
+        <button><i class="fa fa-retweet"></i> Repost</button>
+        <button><i class="fa fa-paper-plane"></i> Send</button>
       </div>
     </div>
   </div>
@@ -382,21 +353,21 @@
 <script>
   $(document).ready(function () {
     $('.datatable').DataTable({
-      pageLength: 5,
+      pageLength: 10,
       order: [],
       language: { search: "🔍 Search Posts:" }
     });
   });
 
-$('.view-post').on('click', function () {
+  $('.view-post').on('click', function () {
     const content = $(this).data('content') || '';
     const imagesData = $(this).data('images');
-    
+
     console.log('=== DEBUG START ===');
     console.log('Raw images data:', imagesData);
     console.log('Type of images data:', typeof imagesData);
     console.log('Content:', content);
-    
+
     // Extract hashtags
     const hashtags = content.match(/#\w+/g) || [];
     const cleanContent = content.replace(/#\w+/g, '').trim();
@@ -408,81 +379,81 @@ $('.view-post').on('click', function () {
     // Parse images
     let images = [];
     if (imagesData) {
-        // If it's already an array (parsed by jQuery)
-        if (Array.isArray(imagesData)) {
-            images = imagesData;
-            console.log('Images is already an array:', images);
-        } else if (typeof imagesData === 'string') {
-            try {
-                // Try parsing as JSON array first
-                images = JSON.parse(imagesData);
-                console.log('Parsed as JSON:', images);
-            } catch (e) {
-                // If not JSON, treat as comma-separated string
-                images = imagesData.split(',').map(img => img.trim()).filter(img => img);
-                console.log('Parsed as comma-separated:', images);
-            }
-        } else if (typeof imagesData === 'object') {
-            // It might already be parsed
-            images = imagesData;
-            console.log('Images is object:', images);
+      // If it's already an array (parsed by jQuery)
+      if (Array.isArray(imagesData)) {
+        images = imagesData;
+        console.log('Images is already an array:', images);
+      } else if (typeof imagesData === 'string') {
+        try {
+          // Try parsing as JSON array first
+          images = JSON.parse(imagesData);
+          console.log('Parsed as JSON:', images);
+        } catch (e) {
+          // If not JSON, treat as comma-separated string
+          images = imagesData.split(',').map(img => img.trim()).filter(img => img);
+          console.log('Parsed as comma-separated:', images);
         }
+      } else if (typeof imagesData === 'object') {
+        // It might already be parsed
+        images = imagesData;
+        console.log('Images is object:', images);
+      }
     }
-    
+
     console.log('Final images array:', images);
     console.log('Images length:', images.length);
     console.log('=== DEBUG END ===');
 
     // Handle image carousel
     if (images && images.length > 0) {
-        const $carouselInner = $('#carouselImages');
-        const $indicators = $('#carouselIndicators');
-        
-        console.log('Building carousel with', images.length, 'images');
-        
-        // Clear existing content
-        $carouselInner.empty();
-        $indicators.empty();
-        
-        // Add images to carousel
-        images.forEach((imageUrl, index) => {
-            const activeClass = index === 0 ? 'active' : '';
-            
-            console.log(`Adding image ${index}:`, imageUrl);
-            
-            // Add carousel item
-            const carouselItem = `
+      const $carouselInner = $('#carouselImages');
+      const $indicators = $('#carouselIndicators');
+
+      console.log('Building carousel with', images.length, 'images');
+
+      // Clear existing content
+      $carouselInner.empty();
+      $indicators.empty();
+
+      // Add images to carousel
+      images.forEach((imageUrl, index) => {
+        const activeClass = index === 0 ? 'active' : '';
+
+        console.log(`Adding image ${index}:`, imageUrl);
+
+        // Add carousel item
+        const carouselItem = `
                 <div class="carousel-item ${activeClass}">
                     <img src="${imageUrl}" class="d-block w-100 rounded" alt="Post image ${index + 1}" style="max-height: 500px; object-fit: contain;">
                 </div>
             `;
-            $carouselInner.append(carouselItem);
-            
-            // Add indicator
-            $indicators.append(`
+        $carouselInner.append(carouselItem);
+
+        // Add indicator
+        $indicators.append(`
                 <li data-target="#postImageCarousel" data-slide-to="${index}" class="${activeClass}"></li>
             `);
-        });
-        
-        // Show/hide carousel controls based on number of images
-        if (images.length > 1) {
-            $('.carousel-control-prev, .carousel-control-next').show();
-            $('#carouselIndicators').show();
-        } else {
-            $('.carousel-control-prev, .carousel-control-next').hide();
-            $('#carouselIndicators').hide();
-        }
-        
-        $('#postImageCarousel').removeClass('d-none');
-        console.log('Carousel should now be visible');
+      });
+
+      // Show/hide carousel controls based on number of images
+      if (images.length > 1) {
+        $('.carousel-control-prev, .carousel-control-next').show();
+        $('#carouselIndicators').show();
+      } else {
+        $('.carousel-control-prev, .carousel-control-next').hide();
+        $('#carouselIndicators').hide();
+      }
+
+      $('#postImageCarousel').removeClass('d-none');
+      console.log('Carousel should now be visible');
     } else {
-        console.log('No images to display, hiding carousel');
-        $('#postImageCarousel').addClass('d-none');
+      console.log('No images to display, hiding carousel');
+      $('#postImageCarousel').addClass('d-none');
     }
-    
+
     // Open modal
     $('#postModal').modal('show');
-});
+  });
 </script>
 
 {% endblock %}
