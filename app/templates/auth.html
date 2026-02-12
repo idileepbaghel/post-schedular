@@ -349,7 +349,7 @@
         </div>
 
         <!-- Sign In Form -->
-        <form method="POST" action="{{ url_for('signin_post') }}">
+        <form method="POST" action="{{ url_for('auth_bp.signin_post') }}">
             <div class="form" id="signinForm">
                 <div class="form-header">
                     <h2>Welcome Back</h2>
@@ -396,7 +396,7 @@
                 <div class="divider" style="margin: 10px 0;">Or Continue With</div>
 
                 <div class="social-buttons">
-                    <a class="btn linkedin" href="{{ url_for('linkedin_login') }}">
+                    <a class="btn linkedin" href="{{ url_for('auth_bp.linkedin_login') }}">
                         <i class="bi bi-linkedin"></i>
                         LinkedIn
                     </a>
@@ -409,7 +409,7 @@
         </form>
 
         <!-- Sign Up Form -->
-        <form method="POST" action="{{ url_for('signup_post') }}">
+        <form method="POST" action="{{ url_for('auth_bp.signup_post') }}">
             <div class="form hidden" id="signupForm">
                 <div class="form-header">
                     <h2>Create Account</h2>
@@ -500,7 +500,7 @@
                 <div class="divider" style="margin:10px 0;">Or Continue With</div>
 
                 <div class="social-buttons">
-                    <a class="btn linkedin" href="{{ url_for('linkedin_login') }}">
+                    <a class="btn linkedin" href="{{ url_for('auth_bp.linkedin_login') }}">
                         <i class="bi bi-linkedin"></i>
                         LinkedIn
                     </a>
@@ -539,6 +539,25 @@
         //   <script> showSignUp(); </script>
     // {% endif %}
     </script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var alerts = document.querySelectorAll('.alert');
+        if (alerts.length > 0) {
+            setTimeout(function() {
+                alerts.forEach(function(alert) {
+                    try {
+                        var bsAlert = new bootstrap.Alert(alert);
+                        bsAlert.close();
+                    } catch (e) {
+                        alert.classList.remove('show');
+                        alert.classList.add('fade');
+                        setTimeout(function() { alert.remove(); }, 500); 
+                    }
+                });
+            }, 3000);
+        }
+    });
+  </script>
 </body>
 
 </html>

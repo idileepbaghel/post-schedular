@@ -1,210 +1,211 @@
 {% extends 'base.html' %}
 {% block content %}
 
- <style>
-        body {
-            background: #f8f9fa;
-            min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        .profile-container {
-            max-width: 1000px;
-            margin: 50px auto;
-            padding: 0 20px;
-        }
-        
-        .profile-card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-            overflow: hidden;
-            border: 1px solid #e0e0e0;
-        }
-        
-        .profile-header {
-            background: linear-gradient(135deg, #1e7e9e 0%, #2a9bb8 100%);
-            padding: 40px;
-            text-align: center;
-            color: white;
-            position: relative;
-        }
-        
-        .profile-avatar {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            border: 5px solid white;
-            object-fit: cover;
-            margin-bottom: 20px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-        }
-        
-        .profile-name {
-            font-size: 28px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .profile-email {
-            font-size: 16px;
-            opacity: 0.9;
-        }
-        
-        .linkedin-badge {
-            display: inline-block;
-            margin-top: 15px;
-            padding: 8px 20px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 20px;
-            font-size: 14px;
-        }
-        
-        .linkedin-badge.verified {
-            background: #10b981;
-        }
-        
-        .linkedin-badge.unverified {
-            background: #ef4444;
-        }
-        
-        .profile-stats {
-            display: flex;
-            justify-content: space-around;
-            padding: 30px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #e9ecef;
-        }
-        
-        .stat-item {
-            text-align: center;
-        }
-        
-        .stat-number {
-            font-size: 32px;
-            font-weight: bold;
-            color: #1e7e9e;
-        }
-        
-        .stat-label {
-            color: #666;
-            font-size: 14px;
-            margin-top: 5px;
-        }
-        
-        .profile-body {
-            padding: 40px;
-        }
-        
-        .section-title {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            color: #333;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .section-title i {
-            color: #1e7e9e;
-        }
-        
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 15px 0;
-            border-bottom: 1px solid #e9ecef;
-        }
-        
-        .info-label {
-            color: #666;
-            font-weight: 500;
-        }
-        
-        .info-value {
-            color: #333;
-            font-weight: 600;
-        }
-        
-        .btn-edit-profile {
-            background: #1e7e9e;
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-        
-        .btn-edit-profile:hover {
-            background: #165f7a;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(30,126,158,0.3);
-        }
-        
-        .btn-delete-account {
-            background: #ef4444;
-            color: white;
-            border: none;
-            padding: 10px 25px;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-        
-        .btn-delete-account:hover {
-            background: #dc2626;
-        }
-        
-        .back-btn {
-            color: white;
-            text-decoration: none;
-            font-size: 16px;
-            margin-bottom: 20px;
-            display: inline-block;
-            transition: transform 0.3s;
-        }
-        
-        .back-btn:hover {
-            transform: translateX(-5px);
-            color: white;
-        }
-        
-        .modal-content {
-            border-radius: 15px;
-        }
-        
-        .modal-header {
-            background: linear-gradient(135deg, #0077b5 0%, #00a0dc 100%);
-            color: white;
-            border-radius: 15px 15px 0 0;
-        }
-        
-        .form-label {
-            font-weight: 600;
-            color: #333;
-        }
-        
-        .form-control:focus {
-            border-color: #0077b5;
-            box-shadow: 0 0 0 0.2rem rgba(0,119,181,0.25);
-        }
-    </style>
+<style>
+    body {
+        background: #f8f9fa;
+        min-height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .profile-container {
+        max-width: 1000px;
+        margin: 50px auto;
+        padding: 0 20px;
+    }
+
+    .profile-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        border: 1px solid #e0e0e0;
+    }
+
+    .profile-header {
+        background: linear-gradient(135deg, #1e7e9e 0%, #2a9bb8 100%);
+        padding: 40px;
+        text-align: center;
+        color: white;
+        position: relative;
+    }
+
+    .profile-avatar {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        border: 5px solid white;
+        object-fit: cover;
+        margin-bottom: 20px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .profile-name {
+        font-size: 28px;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .profile-email {
+        font-size: 16px;
+        opacity: 0.9;
+    }
+
+    .linkedin-badge {
+        display: inline-block;
+        margin-top: 15px;
+        padding: 8px 20px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        font-size: 14px;
+    }
+
+    .linkedin-badge.verified {
+        background: #10b981;
+    }
+
+    .linkedin-badge.unverified {
+        background: #ef4444;
+    }
+
+    .profile-stats {
+        display: flex;
+        justify-content: space-around;
+        padding: 30px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .stat-item {
+        text-align: center;
+    }
+
+    .stat-number {
+        font-size: 32px;
+        font-weight: bold;
+        color: #1e7e9e;
+    }
+
+    .stat-label {
+        color: #666;
+        font-size: 14px;
+        margin-top: 5px;
+    }
+
+    .profile-body {
+        padding: 40px;
+    }
+
+    .section-title {
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .section-title i {
+        color: #1e7e9e;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 15px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .info-label {
+        color: #666;
+        font-weight: 500;
+    }
+
+    .info-value {
+        color: #333;
+        font-weight: 600;
+    }
+
+    .btn-edit-profile {
+        background: #1e7e9e;
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .btn-edit-profile:hover {
+        background: #165f7a;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(30, 126, 158, 0.3);
+    }
+
+    .btn-delete-account {
+        background: #ef4444;
+        color: white;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .btn-delete-account:hover {
+        background: #dc2626;
+    }
+
+    .back-btn {
+        color: white;
+        text-decoration: none;
+        font-size: 16px;
+        margin-bottom: 20px;
+        display: inline-block;
+        transition: transform 0.3s;
+    }
+
+    .back-btn:hover {
+        transform: translateX(-5px);
+        color: white;
+    }
+
+    .modal-content {
+        border-radius: 15px;
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, #0077b5 0%, #00a0dc 100%);
+        color: white;
+        border-radius: 15px 15px 0 0;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .form-control:focus {
+        border-color: #0077b5;
+        box-shadow: 0 0 0 0.2rem rgba(0, 119, 181, 0.25);
+    }
+</style>
 </head>
+
 <body>
     <div class="profile-container">
         <a href="{{ url_for('generate_text') }}" class="back-btn">
             <i class="fas fa-arrow-left"></i> Back to Dashboard
         </a>
-        
+
         <div class="profile-card">
             <!-- Profile Header -->
             <div class="profile-header">
                 <img src="{{ profile.user_pic }}" alt="Profile Picture" class="profile-avatar">
                 <div class="profile-name">{{ profile.user_name }}</div>
                 <div class="profile-email">{{ profile.user_email }}</div>
-                
+
                 {% if profile.linkedin_verified %}
                 <span class="linkedin-badge verified">
                     <i class="fab fa-linkedin"></i> LinkedIn Verified
@@ -215,7 +216,7 @@
                 </span>
                 {% endif %}
             </div>
-            
+
             <!-- Stats Section -->
             <div class="profile-stats">
                 <div class="stat-item">
@@ -231,43 +232,43 @@
                     <div class="stat-label">Published</div>
                 </div>
             </div>
-            
+
             <!-- Profile Details -->
             <div class="profile-body">
                 <div class="section-title">
                     <i class="fas fa-user-circle"></i>
                     Account Information
                 </div>
-                
+
                 <div class="info-row">
                     <span class="info-label">User ID</span>
                     <span class="info-value">#{{ profile.user_id }}</span>
                 </div>
-                
+
                 <div class="info-row">
                     <span class="info-label">Full Name</span>
                     <span class="info-value">{{ profile.user_name }}</span>
                 </div>
-                
+
                 <div class="info-row">
                     <span class="info-label">Email Address</span>
                     <span class="info-value">{{ profile.user_email }}</span>
                 </div>
-                
+
                 {% if profile.linkedin_user_urn %}
                 <div class="info-row">
                     <span class="info-label">LinkedIn URN</span>
                     <span class="info-value">{{ profile.linkedin_user_urn[:20] }}...</span>
                 </div>
                 {% endif %}
-                
+
                 {% if profile.account_created %}
                 <div class="info-row">
                     <span class="info-label">Member Since</span>
                     <span class="info-value">{{ profile.account_created.strftime('%B %d, %Y') }}</span>
                 </div>
                 {% endif %}
-                
+
                 <div class="info-row" style="border-bottom: none;">
                     <span class="info-label">Account Status</span>
                     <span class="info-value">
@@ -278,27 +279,28 @@
                         {% endif %}
                     </span>
                 </div>
-                
+
                 <!-- Action Buttons -->
                 <div class="mt-4 d-flex gap-3">
                     <button class="btn btn-edit-profile" data-bs-toggle="modal" data-bs-target="#editProfileModal">
                         <i class="fas fa-edit"></i> Edit Profile
                     </button>
-                    
+
                     {% if not profile.linkedin_verified %}
                     <a href="{{ url_for('verify_social') }}" class="btn btn-warning">
                         <i class="fab fa-linkedin"></i> Verify LinkedIn
                     </a>
                     {% endif %}
-                    
-                    <button class="btn btn-delete-account ms-auto" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+
+                    <button class="btn btn-delete-account ms-auto" data-bs-toggle="modal"
+                        data-bs-target="#deleteAccountModal">
                         <i class="fas fa-trash-alt"></i> Delete Account
                     </button>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <!-- Edit Profile Modal -->
     <div class="modal fade" id="editProfileModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
@@ -313,25 +315,29 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label">Full Name</label>
-                            <input type="text" class="form-control" name="user_name" value="{{ profile.user_name }}" required>
+                            <input type="text" class="form-control" name="user_name" value="{{ profile.user_name }}"
+                                required>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label class="form-label">Email Address</label>
-                            <input type="email" class="form-control" name="user_email" value="{{ profile.user_email }}" required>
+                            <input type="email" class="form-control" name="user_email" value="{{ profile.user_email }}"
+                                required>
                         </div>
-                        
+
                         <hr>
                         <h6 class="mb-3">Change Password (Optional)</h6>
-                        
+
                         <div class="mb-3">
                             <label class="form-label">Current Password</label>
-                            <input type="password" class="form-control" name="current_password" placeholder="Enter current password">
+                            <input type="password" class="form-control" name="current_password"
+                                placeholder="Enter current password">
                         </div>
-                        
+
                         <div class="mb-3">
                             <label class="form-label">New Password</label>
-                            <input type="password" class="form-control" name="new_password" placeholder="Enter new password">
+                            <input type="password" class="form-control" name="new_password"
+                                placeholder="Enter new password">
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -342,7 +348,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Delete Account Modal -->
     <div class="modal fade" id="deleteAccountModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
@@ -356,12 +362,14 @@
                 <form method="POST" action="">
                     <div class="modal-body">
                         <div class="alert alert-danger">
-                            <strong>Warning!</strong> This action cannot be undone. All your posts and data will be permanently deleted.
+                            <strong>Warning!</strong> This action cannot be undone. All your posts and data will be
+                            permanently deleted.
                         </div>
-                        
+
                         <div class="mb-3">
                             <label class="form-label">Enter your password to confirm</label>
-                            <input type="password" class="form-control" name="confirm_password" placeholder="Your password" required>
+                            <input type="password" class="form-control" name="confirm_password"
+                                placeholder="Your password" required>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -372,4 +380,4 @@
             </div>
         </div>
     </div>
-{% endblock %}
+    {% endblock %}
