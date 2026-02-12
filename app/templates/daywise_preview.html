@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+<style>
+  .daywise-container { max-width: 1300px; margin: 0 auto; }
+
+  .header-banner {
+    background: linear-gradient(135deg, #0f5f7a 0%, #1a8ba8 100%);
+    color: white; border-radius: 12px; padding: 25px 30px; margin-bottom: 30px;
+    box-shadow: 0 4px 20px rgba(15, 95, 122, 0.2);
+    display: flex; align-items: center; gap: 15px;
+  }
+  .header-banner h2 { margin: 0; font-size: 24px; font-weight: 600; }
+
+  .content-card {
+    background: white; border: 1px solid #e0e0e0; border-radius: 12px; margin-bottom: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden;
+  }
+  
+  .card-header-custom {
+    background: #f8f9fa; border-bottom: 1px solid #e0e0e0; padding: 15px 25px;
+    display: flex; justify-content: space-between; align-items: center;
+    color: #0f5f7a; font-weight: 600;
+  }
+
+  .card-body-custom { padding: 25px; }
+
+  .form-control-modern {
+    background: #fff; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px;
+    font-size: 15px; line-height: 1.6; color: #333;
+  }
+  .form-control-modern:focus {
+    border-color: #0f5f7a; box-shadow: 0 0 0 3px rgba(15, 95, 122, 0.1); outline: none;
+  }
+
+  .media-options-wrapper {
+    margin-top: 25px; background: #f8faff; border: 1px dashed #cfd9e8;
+    border-radius: 10px; padding: 20px;
+  }
+
+  .option-box {
+    background: white; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px;
+    height: 100%; display: flex; flex-direction: column;
+  }
+
+  .ai-image-preview {
+    width: 100%; height: 200px; background: #f1f1f1; border-radius: 6px;
+    overflow: hidden; display: flex; align-items: center; justify-content: center;
+    margin-bottom: 12px; border: 1px solid #eee;
+  }
+  .ai-image-preview img { width: 100%; height: 100%; object-fit: contain; }
+
+  .btn-gen-ai {
+    width: 100%; background: #eef6f8; color: #0f5f7a; border: 1px solid #0f5f7a;
+    padding: 8px; font-weight: 600; border-radius: 6px; transition: 0.2s;
+  }
+  .btn-gen-ai:hover { background: #0f5f7a; color: white; }
+
+  .custom-file-upload {
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    width: 100%; height: 200px; border: 2px dashed #cbd5e1; border-radius: 6px;
+    background: #fafafa; text-align: center; cursor: pointer; transition: 0.2s; position: relative;
+  }
+  .custom-file-upload:hover { background: #f0f7ff; border-color: #0f5f7a; }
+  .custom-file-upload input { position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+
+  .action-bar {
+    background: white; padding: 20px; border-top: 1px solid #e0e0e0;
+    display: flex; justify-content: space-between; align-items: center; margin-top: 40px;
+    border-radius: 12px; box-shadow: 0 -4px 20px rgba(0,0,0,0.03); flex-wrap: wrap; gap: 15px;
+  }
+
+  .btn-save-main {
+    background: linear-gradient(135deg, #0f5f7a 0%, #1a8ba8 100%); color: white;
+    padding: 12px 30px; border-radius: 50px; border: none; font-weight: 600;
+  }
+
+  @media (max-width: 768px) {
+    .header-banner { flex-direction: column; text-align: center; }
+    .card-header-custom { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .action-bar { flex-direction: column-reverse; text-align: center; }
+    .btn-save-main, .btn-secondary-link { width: 100%; justify-content: center; }
+  }
+</style>
+
+<div class="daywise-container">
+  <div class="header-banner">
+    <i class="bi bi-calendar-event fs-2"></i>
+    <div>
+      <h2>Generated Schedule</h2>
+    </div>
+  </div>
+
+  {% if daywise_content %}
+  <form id="saveForm" method="POST" action="{{ url_for('content_bp.save_schedule') }}" enctype="multipart/form-data">
+      <input type="hidden" name="total_posts" value="{{ daywise_content|length }}">
+  </form>
+
+  <div class="row">
+    {% for day in daywise_content %}
+    <div class="col-12">
+      <div class="content-card">
+        <div class="card-header-custom">
+          <div>
+            <i class="bi bi-calendar-date me-2"></i>Day {{ loop.index }}: {{ day.date }}
+            {% if day.topic_context %}
+            <span class="ms-3 text-muted" style="font-weight: 400; font-size: 0.9em; border-left: 2px solid #ddd; padding-left: 10px;">
+                <i class="bi bi-lightbulb"></i> {{ day.topic_context }}
+            </span>
+            {% endif %}
+          </div>
+          <span class="badge bg-light text-dark border">{{ day.text|length }} chars</span>
+        </div>
+
+        <div class="card-body-custom">
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-bold">POST CONTENT</label>
+            <textarea name="post_content_{{ loop.index }}" form="saveForm" class="form-control form-control-modern" 
+                      rows="12" style="min-height: 250px;">{{ day.text }}</textarea>
+            
+            <input type="hidden" name="post_date_{{ loop.index }}" form="saveForm" value="{{ day.date }}">
+            <input type="hidden" name="post_topic_{{ loop.index }}" form="saveForm" value="{{ day.topic_context }}">
+          </div>
+
+          <div class="media-options-wrapper">
+            <div class="text-muted small fw-bold mb-3"><i class="bi bi-images"></i> MEDIA OPTIONS</div>
+            <div class="row g-3">
+              <div class="col-12 col-md-6 col-lg-5">
+                <div class="option-box">
+                  <span class="small fw-bold text-primary mb-2 d-block">Option A: AI Generated</span>
+                  <div class="ai-image-preview">
+                    {% if day.image %}
+                      <img src="{{ url_for('static', filename='generated_image/' ~ day.image) }}">
+                      <input type="hidden" name="post_image_{{ loop.index }}" form="saveForm" value="{{ day.image }}">
+                    {% else %}
+                      <div class="text-muted small">No Image</div>
+                    {% endif %}
+                  </div>
+                  <form action="{{ url_for('content_bp.generate_image') }}" method="POST" style="margin-top:auto;">
+                    <input type="hidden" name="post_text" value="{{ day.text }}">
+                    <input type="hidden" name="post_index" value="{{ loop.index }}">
+                    <button type="submit" class="btn-gen-ai"><i class="bi bi-magic"></i> Generate/Regenerate</button>
+                  </form>
+                </div>
+              </div>
+
+              <div class="col-12 col-md-6 col-lg-7">
+                <div class="option-box">
+                  <span class="small fw-bold text-primary mb-2 d-block">Option B: Upload Your Own</span>
+                  <label class="custom-file-upload">
+                    <input type="file" name="manual_image_{{ loop.index }}" form="saveForm" accept="image/*" multiple onchange="updateFileName(this)">
+                    <i class="bi bi-cloud-arrow-up fs-3 text-muted"></i>
+                    <span class="text-muted small mt-2">Click to Upload (Overrides AI)</span>
+                    <span class="file-name-display text-success fw-bold small mt-2 d-none"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="action-bar">
+    <a href="{{ url_for('content_bp.clear_and_generate') }}" class="btn btn-outline-secondary">Discard & Restart</a>
+    <div class="d-flex gap-2 flex-wrap justify-content-center">
+        <a href="{{ url_for('post_bp.view_posts') }}" class="btn btn-light border">View Saved</a>
+        <button type="submit" form="saveForm" class="btn-save-main">Save Schedule</button>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="text-center p-5 bg-white rounded shadow-sm border">
+    <h4>No content generated yet</h4>
+    <a href="{{ url_for('content_bp.generate_text') }}" class="btn btn-primary mt-3">Go to Generator</a>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+  function updateFileName(input) {
+    const display = input.parentElement.querySelector('.file-name-display');
+    if (input.files.length > 0) {
+      display.textContent = input.files.length + " file(s) selected"; display.classList.remove('d-none');
+    } else { display.classList.add('d-none'); }
+  }
+</script>
+{% endblock %}
