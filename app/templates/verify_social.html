@@ -1,22 +1,118 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="container text-center mt-5">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <div class="position-fixed top-0 end-0 p-3" style="z-index: 11;">
-        {% for category, message in messages %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+
+<style>
+    /* Centering Wrapper */
+    .verify-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 80vh; /* Occupy most of the screen height */
+    }
+
+    /* Card Styling (Matches Auth/Generator Cards) */
+    .verify-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e0e0e0;
+        padding: 50px 40px;
+        text-align: center;
+        max-width: 480px;
+        width: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Top Icon Styling */
+    .icon-box {
+        width: 80px; height: 80px;
+        background: linear-gradient(135deg, #eef6f8 0%, #e3f2f5 100%);
+        color: #0f5f7a;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(15, 95, 122, 0.1);
+    }
+
+    /* Typography */
+    .verify-title {
+        color: #0f5f7a;
+        font-weight: 700;
+        font-size: 26px;
+        margin-bottom: 10px;
+    }
+
+    .verify-text {
+        color: #666;
+        font-size: 15px;
+        margin-bottom: 30px;
+        line-height: 1.6;
+    }
+
+    /* Custom LinkedIn Button */
+    .btn-social-connect {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        padding: 14px;
+        border-radius: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        font-size: 16px;
+        border: none;
+    }
+
+    .btn-linkedin-custom {
+        background-color: #0077b5;
+        color: white;
+    }
+
+    .btn-linkedin-custom:hover {
+        background-color: #005f87;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 119, 181, 0.3);
+    }
+
+    /* Bottom Info */
+    .security-note {
+        margin-top: 25px;
+        font-size: 12px;
+        color: #999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+    }
+</style>
+
+<div class="container verify-wrapper">
+    <div class="verify-card">
+        <div class="icon-box">
+            <i class="bi bi-shield-lock-fill"></i>
         </div>
-        {% endfor %}
+        
+        <h2 class="verify-title">Verification Required</h2>
+        <p class="verify-text">
+            To ensure the security of our platform and access AI generation features, please verify your identity by connecting your LinkedIn account.
+        </p>
+
+        <a href="{{ url_for('auth_bp.linkedin_login') }}" class="btn-social-connect btn-linkedin-custom">
+            <i class="bi bi-linkedin fs-5"></i> Connect LinkedIn
+        </a>
+        
+        <div class="security-note">
+            <i class="bi bi-lock-fill"></i> 
+            Your data is secure. We never post without permission.
+        </div>
     </div>
-    {% endif %}
-    {% endwith %}
-    <h4>Verify Your one of your Social Account</h4>
-    <p>To use our services, please connect your Social account.</p>
-    <a href="{{ url_for('linkedin_login') }}" class="btn btn-primary mt-3">
-        <i class="fab fa-linkedin"></i> Connect LinkedIn
-    </a>
 </div>
+
 {% endblock %}

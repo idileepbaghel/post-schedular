@@ -18,49 +18,47 @@
   .header-banner {
     background: linear-gradient(135deg, #0f5f7a 0%, #1a8ba8 100%);
     color: white; border-radius: 12px; padding: 25px 30px; margin-bottom: 30px;
-    box-shadow: 0 4px 20px rgba(15, 95, 122, 0.2); display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 4px 20px rgba(15, 95, 122, 0.2); display: flex; align-items: center; gap: 15px;
   }
-  .header-title { display: flex; align-items: center; gap: 15px; }
   .header-banner h1 { margin: 0; font-size: 24px; font-weight: 600; }
 
-  /* Table Styles */
+  /* === Table Styles === */
   .table-container { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #e0e0e0; }
   .table th { background: linear-gradient(135deg, #0f5f7a 0%, #1a8ba8 100%) !important; color: white; border: none; font-weight: 500; white-space: nowrap; }
   .table td { vertical-align: middle; font-size: 15px; }
 
-  /* Checkbox Styles */
-  .custom-checkbox { width: 18px; height: 18px; cursor: pointer; accent-color: #0f5f7a; }
-
-  /* Topic Link */
+  /* Topic Link Styling */
   .topic-link {
     color: #0f5f7a; font-weight: 600; text-decoration: none; transition: 0.2s;
-    display: block; max-width: 350px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;
+    display: block; max-width: 350px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    cursor: pointer;
   }
   .topic-link:hover { color: #1a8ba8; text-decoration: underline; }
 
-  /* Status Badges */
   .status-posted { color: #10b981; font-weight: 600; background: #ecfdf5; padding: 4px 12px; border-radius: 20px; font-size: 13px; display: inline-block; }
   .status-pending { color: #f59e0b; font-weight: 600; background: #fffbeb; padding: 4px 12px; border-radius: 20px; font-size: 13px; display: inline-block; }
 
-  /* Buttons */
+  /* === Buttons === */
   .btn-linkedin { background: #0077b5; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 14px; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; }
   .btn-linkedin:hover { background: #005f87; color: white; transform: translateY(-1px); text-decoration: none; }
+
   .action-btn { padding: 6px 10px; border-radius: 6px; font-size: 16px; margin-right: 4px; transition: 0.2s; }
   .action-btn:hover { transform: scale(1.1); }
 
-  /* Bulk Delete Button */
-  #bulkDeleteBtn { transition: all 0.3s ease; }
-
-  /* Modal UI */
+  /* === Modal UI === */
   .modal-content { border-radius: 12px; border: none; overflow: hidden; }
   .linkedin-card-header { display: flex; align-items: center; padding: 16px 20px; background-color: #fff; border-bottom: 1px solid #f3f2ef; }
   .linkedin-avatar { width: 48px; height: 48px; border-radius: 50%; background: #e0e0e0; margin-right: 12px; object-fit: cover; }
+  
   .edit-textarea { width: 100%; border: 1px dashed #ccc; background: #fcfcfc; padding: 15px; border-radius: 8px; font-family: inherit; font-size: 15px; color: #333; resize: vertical; min-height: 350px; margin-bottom: 15px; line-height: 1.6; }
   .edit-textarea:focus { outline: none; border-color: #0f5f7a; background: #fff; }
+
   .edit-date-input { border: 1px solid #e0e0e0; background: #f8f9fa; padding: 6px 12px; border-radius: 6px; font-size: 13px; color: #333; cursor: pointer; }
+
   .upload-area { background: #f8f9fa; border-top: 1px solid #e0e0e0; padding: 15px; text-align: center; }
   .custom-file-upload { display: inline-block; padding: 8px 20px; cursor: pointer; background: white; border: 1px solid #0f5f7a; color: #0f5f7a; border-radius: 50px; font-weight: 600; font-size: 13px; transition: 0.2s; }
   .custom-file-upload:hover { background: #0f5f7a; color: white; }
+
   .edit-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid #eee; }
   .btn-save { background: #0f5f7a; color: white; border-radius: 50px; padding: 8px 24px; font-weight: 600; border: none; }
   .btn-save:hover { background: #0a4a5e; }
@@ -68,10 +66,13 @@
   .btn-cancel:hover { background: #f3f3f3; }
 
   @media (max-width: 768px) {
-    .header-banner { flex-direction: column; text-align: center; gap: 15px; }
-    .header-title { flex-direction: column; }
+    .daywise-container { padding: 15px; }
+    .header-banner { flex-direction: column; text-align: center; padding: 20px; }
     .table-responsive { border: 0; }
     .dataTables_wrapper { overflow-x: auto; }
+    .btn-linkedin { width: 100%; justify-content: center; margin-top: 5px; }
+    .d-flex.align-items-center.gap-2 { flex-wrap: wrap; justify-content: center; }
+    .modal-dialog { margin: 10px; }
     .topic-link { max-width: 200px; }
   }
 </style>
@@ -79,17 +80,9 @@
 <div class="daywise-container">
   
   <div class="header-banner">
-    <div class="header-title">
-        <i class="bi bi-collection-play" style="font-size: 2rem;"></i>
-        <h1>Saved Posts Repository</h1>
-    </div>
-    <button id="bulkDeleteBtn" class="btn btn-danger btn-sm px-3 py-2 font-weight-bold" style="border-radius: 20px; display: none;">
-        <i class="bi bi-trash-fill me-1"></i> Delete Selected (<span id="selectedCount">0</span>)
-    </button>
+    <i class="bi bi-collection-play" style="font-size: 2rem;"></i>
+    <h1>Saved Posts Repository</h1>
   </div>
-
-  <form id="bulkDeleteForm" action="{{ url_for('post_bp.bulk_delete_posts') }}" method="POST">
-      </form>
 
   {% if all_posts %}
   <div class="table-container">
@@ -97,9 +90,6 @@
       <table class="table table-hover datatable w-100">
         <thead>
           <tr>
-            <th style="width: 40px; text-align: center;">
-                <input type="checkbox" id="selectAll" class="custom-checkbox">
-            </th>
             <th style="width: 50px;">S.No</th>
             <th>Topic</th>
             <th style="width: 140px;">Scheduled Date</th>
@@ -110,9 +100,6 @@
         <tbody>
           {% for post in all_posts %}
           <tr>
-            <td style="text-align: center;">
-                <input type="checkbox" class="post-checkbox custom-checkbox" value="{{ post.id }}">
-            </td>
             <td>{{ loop.index }}</td>
             <td>
               <a class="view-post topic-link"
@@ -136,6 +123,7 @@
             <td>
               <div class="d-flex align-items-center gap-2">
                   {% if post.posted == 0 %}
+                  
                   <form action="{{ url_for('post_bp.post_to_linkedin') }}" method="POST" style="display:inline;" class="post-linkedin-form">
                       <input type="hidden" name="content" value="{{ post.content }}">
                       <input type="hidden" name="post_id" value="{{ post.id }}">
@@ -172,51 +160,14 @@
   </div>
   {% else %}
   <div class="text-center p-5 bg-white rounded shadow-sm border">
+    <i class="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
     <h4 class="mb-3">No Saved Posts</h4>
-    <a href="{{ url_for('content_bp.generate_text') }}" class="btn btn-primary">🚀 Go to Generator</a>
+    <p class="text-muted mb-4">You haven't saved any schedules yet.</p>
+    <a href="{{ url_for('content_bp.generate_text') }}" class="btn btn-primary" style="background:#0f5f7a; border:none;">
+      🚀 Go to Generator
+    </a>
   </div>
   {% endif %}
-</div>
-
-<div class="modal fade" id="editPostModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-      <div class="modal-content">
-        <form id="editPostForm" method="POST" enctype="multipart/form-data">
-            <div class="linkedin-card-header">
-                <img src="{{ session.get('user_pic', 'https://cdn-icons-png.flaticon.com/512/847/847969.png') }}" class="linkedin-avatar">
-                <div class="linkedin-user-info" style="flex-grow: 1;">
-                  <h6 style="margin:0; font-weight:600;">{{ session.get('linkedin_user', 'You') }}</h6>
-                  <div class="d-flex align-items-center gap-2 mt-1">
-                      <small>Scheduled for:</small>
-                      <input type="date" name="post_date" id="editPostDate" class="edit-date-input" required>
-                  </div>
-                  <small id="editDateHelp" class="text-muted d-block mt-1" style="font-size: 11px;"></small>
-                </div>
-            </div>
-            <div class="linkedin-card-body">
-                <div class="linkedin-content-area" style="padding:20px;">
-                    <textarea name="content" id="editPostContent" class="edit-textarea" placeholder="Start typing..."></textarea>
-                </div>
-                <div id="editImageCarousel" class="carousel slide" data-ride="carousel" style="background:#f3f2ef;">
-                    <div class="carousel-inner" id="editCarouselImages"></div>
-                    <a class="carousel-control-prev" href="#editImageCarousel" role="button" data-slide="prev"><span class="carousel-control-prev-icon" style="filter:invert(1)"></span></a>
-                    <a class="carousel-control-next" href="#editImageCarousel" role="button" data-slide="next"><span class="carousel-control-next-icon" style="filter:invert(1)"></span></a>
-                </div>
-                <div class="upload-area">
-                    <label for="editImageUpload" class="custom-file-upload">
-                        <i class="bi bi-images"></i> Replace Images
-                    </label>
-                    <input type="file" name="image" id="editImageUpload" style="display:none;" accept="image/*" multiple onchange="$('#fileCount').text(this.files.length + ' files selected')">
-                    <div id="fileCount" class="small text-muted mt-2">Uploading new files will replace current images.</div>
-                </div>
-            </div>
-            <div class="edit-footer">
-                <button type="button" id="cancelEditBtn" class="btn-cancel" data-dismiss="modal">Cancel</button>
-                <button type="submit" class="btn-save">Save Changes</button>
-            </div>
-        </form>
-      </div>
-    </div>
 </div>
 
 <div class="modal fade" id="postModal" tabindex="-1" role="dialog">
@@ -251,93 +202,63 @@
   </div>
 </div>
 
+<div class="modal fade" id="editPostModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+      <div class="modal-content">
+        <form id="editPostForm" method="POST" enctype="multipart/form-data">
+            <div class="linkedin-card-header">
+                <img src="{{ session.get('user_pic', 'https://cdn-icons-png.flaticon.com/512/847/847969.png') }}" class="linkedin-avatar">
+                <div class="linkedin-user-info" style="flex-grow: 1;">
+                  <h6 style="margin:0; font-weight:600;">{{ session.get('linkedin_user', 'You') }}</h6>
+                  <div class="d-flex align-items-center gap-2 mt-1">
+                      <small>Scheduled for:</small>
+                      <input type="date" name="post_date" id="editPostDate" class="edit-date-input" required>
+                  </div>
+                </div>
+            </div>
+            <div class="linkedin-card-body">
+                <div class="linkedin-content-area" style="padding:20px;">
+                    <textarea name="content" id="editPostContent" class="edit-textarea" placeholder="Start typing..."></textarea>
+                </div>
+                <div id="editImageCarousel" class="carousel slide" data-ride="carousel" style="background:#f3f2ef;">
+                    <div class="carousel-inner" id="editCarouselImages"></div>
+                    <a class="carousel-control-prev" href="#editImageCarousel" role="button" data-slide="prev"><span class="carousel-control-prev-icon" style="filter:invert(1)"></span></a>
+                    <a class="carousel-control-next" href="#editImageCarousel" role="button" data-slide="next"><span class="carousel-control-next-icon" style="filter:invert(1)"></span></a>
+                </div>
+                <div class="upload-area">
+                    <label for="editImageUpload" class="custom-file-upload">
+                        <i class="bi bi-images"></i> Replace Images
+                    </label>
+                    <input type="file" name="image" id="editImageUpload" style="display:none;" accept="image/*" multiple onchange="$('#fileCount').text(this.files.length + ' files selected')">
+                    <div id="fileCount" class="small text-muted mt-2">Uploading new files will replace current images.</div>
+                </div>
+            </div>
+            <div class="edit-footer">
+                <button type="button" id="cancelEditBtn" class="btn-cancel" data-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn-save">Save Changes</button>
+            </div>
+        </form>
+      </div>
+    </div>
+</div>
+
 <script>
   $(document).ready(function () {
     // 1. Tooltips & DataTable
     $('[data-toggle="tooltip"]').tooltip();
-    $('.datatable').DataTable({ 
-        pageLength: 10, order: [], language: { search: "🔍 Search:" },
-        columnDefs: [{ orderable: false, targets: 0 }] 
-    });
+    $('.datatable').DataTable({ pageLength: 10, order: [], language: { search: "🔍 Search:" } });
 
-    // 2. Date Restriction Logic (11:10 AM Cutoff)
-    const now = new Date();
-    let minDate = new Date(now);
-    if (now.getHours() > 11 || (now.getHours() === 11 && now.getMinutes() > 10)) {
-        minDate.setDate(minDate.getDate() + 1);
-        $('#editDateHelp').text("Scheduling closed for today (cutoff 11:10 AM).");
-    }
-    const year = minDate.getFullYear();
-    const month = String(minDate.getMonth() + 1).padStart(2, '0');
-    const day = String(minDate.getDate()).padStart(2, '0');
-    $('#editPostDate').attr('min', `${year}-${month}-${day}`);
+    // 2. Prevent Past Dates
+    const today = new Date().toISOString().split('T')[0];
+    $('#editPostDate').attr('min', today);
 
     // ==========================================
-    //  BULK DELETE LOGIC
-    // ==========================================
-    
-    $('#selectAll').on('change', function() {
-        $('.post-checkbox').prop('checked', this.checked);
-        updateBulkButton();
-    });
-
-    $(document).on('change', '.post-checkbox', function() {
-        if(!this.checked) $('#selectAll').prop('checked', false);
-        if($('.post-checkbox:checked').length === $('.post-checkbox').length) {
-            $('#selectAll').prop('checked', true);
-        }
-        updateBulkButton();
-    });
-
-    function updateBulkButton() {
-        const count = $('.post-checkbox:checked').length;
-        $('#selectedCount').text(count);
-        
-        // Show button if items selected, hide if 0
-        if (count > 0) {
-            $('#bulkDeleteBtn').prop('disabled', false).fadeIn(200);
-        } else {
-            $('#bulkDeleteBtn').fadeOut(200, function() {
-                $(this).prop('disabled', true);
-            });
-        }
-    }
-
-    $('#bulkDeleteBtn').on('click', function(e) {
-        e.preventDefault();
-        const selectedIds = [];
-        $('.post-checkbox:checked').each(function() {
-            selectedIds.push($(this).val());
-        });
-
-        if (selectedIds.length === 0) return;
-
-        Swal.fire({
-            title: `Delete ${selectedIds.length} posts?`,
-            text: "This action cannot be undone!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Yes, delete them!'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                const form = $('#bulkDeleteForm');
-                form.empty();
-                selectedIds.forEach(id => {
-                    form.append(`<input type="hidden" name="post_ids" value="${id}">`);
-                });
-                form.submit();
-            }
-        });
-    });
-
-    // ==========================================
-    //  EXISTING ACTIONS
+    //  SWEET ALERT: DELETE CONFIRMATION
     // ==========================================
     $(document).on('click', '.delete-btn-sa', function(e) {
         e.preventDefault();
         const url = $(this).attr('href');
+
         Swal.fire({
             title: 'Are you sure?',
             text: "You won't be able to revert this!",
@@ -347,35 +268,64 @@
             cancelButtonColor: '#3085d6',
             confirmButtonText: 'Yes, delete it!'
         }).then((result) => {
-            if (result.isConfirmed) window.location.href = url;
+            if (result.isConfirmed) {
+                window.location.href = url;
+            }
         });
     });
 
+    // ==========================================
+    //  SWEET ALERT: POST TO LINKEDIN CONFIRMATION
+    // ==========================================
     $(document).on('click', '.post-btn-sa', function(e) {
         e.preventDefault();
         const form = $(this).closest('form');
+
         Swal.fire({
             title: 'Post to LinkedIn?',
             text: "This content will be published immediately.",
             icon: 'info',
             showCancelButton: true,
-            confirmButtonColor: '#0077b5',
+            confirmButtonColor: '#0077b5', // LinkedIn Blue
+            cancelButtonColor: '#6c757d',
             confirmButtonText: 'Yes, Post It!',
             cancelButtonText: 'Cancel'
         }).then((result) => {
-            if (result.isConfirmed) form.submit();
+            if (result.isConfirmed) {
+                form.submit();
+            }
         });
     });
 
-    // Disable Right Click
-    $(document).on('contextmenu', '.delete-btn-sa, .edit-post-btn', function(e) {
-        e.preventDefault();
-        return false;
-    });
+    // ==========================================
+    //  CAROUSEL & VIEW LOGIC
+    // ==========================================
+    function buildCarousel(containerId, carouselId, images, maxHeight) {
+        const $container = $(containerId);
+        const $carousel = $(carouselId);
+        const $arrows = $carousel.find('.carousel-control-prev, .carousel-control-next');
+        
+        $container.empty();
+        if (images && images.length > 0) {
+            images.forEach((imageUrl, index) => {
+                const activeClass = index === 0 ? 'active' : '';
+                const validUrl = imageUrl.replace(/'/g, ""); 
+                $container.append(`
+                    <div class="carousel-item ${activeClass}">
+                        <img src="${validUrl}" class="d-block w-100" style="max-height: ${maxHeight}; width: auto; margin: 0 auto; object-fit: contain;">
+                        ${images.length > 1 ? `<div class="carousel-caption d-none d-md-block" style="background:rgba(0,0,0,0.5); padding:5px; bottom:0; border-radius:4px;">Image ${index + 1} of ${images.length}</div>` : ''}
+                    </div>
+                `);
+            });
+            $carousel.removeClass('d-none');
+            $('#noImagesMsg').hide();
+            if (images.length > 1) { $arrows.show(); } else { $arrows.hide(); }
+        } else {
+            $carousel.addClass('d-none');
+            $('#noImagesMsg').show();
+        }
+    }
 
-    // ==========================================
-    //  VIEW & EDIT MODALS
-    // ==========================================
     function parseImages(data) {
         if (!data) return [];
         try {
@@ -387,34 +337,13 @@
         } catch (e) { return []; }
     }
 
-    function buildCarousel(containerId, carouselId, images, maxHeight) {
-        const $container = $(containerId);
-        const $carousel = $(carouselId);
-        $container.empty();
-        if (images && images.length > 0) {
-            images.forEach((imageUrl, index) => {
-                const activeClass = index === 0 ? 'active' : '';
-                const validUrl = imageUrl.replace(/'/g, ""); 
-                $container.append(`
-                    <div class="carousel-item ${activeClass}">
-                        <img src="${validUrl}" class="d-block w-100" style="max-height: ${maxHeight}; width: auto; margin: 0 auto; object-fit: contain;">
-                    </div>
-                `);
-            });
-            $carousel.removeClass('d-none');
-            if(images.length > 1) $carousel.find('.carousel-control-prev, .carousel-control-next').show();
-            else $carousel.find('.carousel-control-prev, .carousel-control-next').hide();
-        } else {
-            $carousel.addClass('d-none');
-        }
-    }
-
+    // View Modal (Triggered by clicking the Topic Link)
     $(document).on('click', '.view-post', function (e) {
-      e.preventDefault();
+      e.preventDefault(); // Prevent jump to top
       const content = $(this).data('content') || '';
       const images = parseImages($(this).attr('data-images'));
-      const cleanContent = content.replace(/#\w+/g, '').trim();
       const hashtags = content.match(/#\w+/g) || [];
+      const cleanContent = content.replace(/#\w+/g, '').trim();
       
       $('#postModalContent').text(cleanContent);
       $('#postModalHashtags').text(hashtags.join(' '));
@@ -422,24 +351,31 @@
       $('#postModal').modal('show');
     });
 
+    // Edit Modal
     $(document).on('click', '.edit-post-btn', function() {
         const postId = $(this).data('id');
         const postDate = $(this).data('date');
         const postContent = $(this).data('content');
         const images = parseImages($(this).attr('data-images'));
 
+        // Note: '/update_post/' + postId works fine without explicit url_for if 
+        // the blueprint route is defined as /update_post/<id>
         $('#editPostForm').attr('action', '/update_post/' + postId);
         $('#editPostDate').val(postDate);
         $('#editPostContent').val(postContent);
         
         buildCarousel('#editCarouselImages', '#editImageCarousel', images, '200px');
         
-        if(images.length === 0) $('#editImageCarousel').addClass('d-none'); 
-        else $('#editImageCarousel').removeClass('d-none'); 
+        if(images.length === 0) { 
+            $('#editImageCarousel').addClass('d-none'); 
+        } else {
+            $('#editImageCarousel').removeClass('d-none'); 
+        }
 
         $('#editPostModal').modal('show');
     });
 
+    // Cancel Button
     $('#cancelEditBtn').on('click', function() {
         $('#editPostModal').modal('hide');
         $('#editPostForm')[0].reset();

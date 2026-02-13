@@ -29,32 +29,157 @@ def signin():
 
 @auth_bp.route('/signin_post', methods=['POST'])
 def signin_post():
-    email = request.form['email']
-    password = request.form['password']
+    email = request.form.get('email', '').strip()
+    password = request.form.get('password', '')
 
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM linkedin_tokens WHERE user_email=%s", (email,))
     user = cur.fetchone()
     cur.close()
 
-    if not user or not check_password_hash(user['password'], password):
-        flash("❌ Invalid email or password.", "danger")
+    # 1. CHECK: User does not exist
+    if not user:
+        flash("❌ Invalid Email. Please Sign Up using LinkedIn or the Sign-Up form.", "warning")
         return redirect(url_for('auth_bp.signin'))
 
-    # Save session
+    # 2. CHECK: User exists BUT has NO PASSWORD (LinkedIn User)
+    if not user['password']:
+        # We use a special category 'no_password_alert' to trigger SweetAlert in template
+        flash(email, "no_password_alert") 
+        return redirect(url_for('auth_bp.signin'))
+
+    # 3. CHECK: Password Invalid
+    if not check_password_hash(user['password'], password):
+        flash("❌ Invalid password.", "danger")
+        return redirect(url_for('auth_bp.signin'))
+
+    # 4. SUCCESS: Log in
     session['user_id'] = user['id']
     session['user_email'] = user['user_email']
     session['linkedin_user'] = user['user_name']
     session['linkedin_user_urn'] = user.get('user_urn')
     session['linkedin_token'] = user.get('access_token')
     
-    # Check LinkedIn verification
+    # LOAD PROFILE PICTURE
+    session['user_pic'] = user.get('pic_url')
+    
     if not user.get('user_urn') or not user.get('access_token'):
-        flash("⚠️ Please verify your LinkedIn account before using the panel.", "warning")
+        flash("⚠️ Please verify your LinkedIn account.", "warning")
         return redirect(url_for('auth_bp.verify_social'))
 
     flash(f"✅ Welcome back, {user['user_name']}!", "success")
     return redirect(url_for('content_bp.generate_text'))
+
+
+# ================================
+# CREATE PASSWORD ROUTES (For LinkedIn Users)
+# ================================
+@auth_bp.route('/create_password_page')
+def create_password_page():
+    email = request.args.get('email')
+    if not email:
+        flash("Invalid request.", "danger")
+        return redirect(url_for('auth_bp.signin'))
+    
+    return render_template('create_password.html', email=email)
+
+@auth_bp.route('/process_create_password', methods=['POST'])
+def process_create_password():
+    email = request.form.get('email')
+    password = request.form.get('password')
+    confirm_password = request.form.get('confirm_password')
+
+    if not email or not password:
+        flash("All fields are required.", "warning")
+        return redirect(url_for('auth_bp.create_password_page', email=email))
+
+    if password != confirm_password:
+        flash("Passwords do not match.", "danger")
+        return redirect(url_for('auth_bp.create_password_page', email=email))
+
+    hashed_password = generate_password_hash(password)
+
+    cur = mysql.connection.cursor()
+    
+    # Verify user exists first
+    cur.execute("SELECT id FROM linkedin_tokens WHERE user_email=%s", (email,))
+    user = cur.fetchone()
+
+    if user:
+        # Update the password
+        cur.execute("""
+            UPDATE linkedin_tokens 
+            SET password=%s, updated_by='User', updated_date=NOW() 
+            WHERE user_email=%s
+        """, (hashed_password, email))
+        mysql.connection.commit()
+        
+        flash("✅ Password set successfully! You can now log in.", "success")
+        return redirect(url_for('auth_bp.signin'))
+    else:
+        flash("User not found.", "danger")
+        return redirect(url_for('auth_bp.signin'))
+    
+    cur.close()
+
+
+# ================================
+# FORGOT PASSWORD ROUTES (Simplified)
+# ================================
+@auth_bp.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    """Step 1: Enter Email"""
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT id FROM linkedin_tokens WHERE user_email=%s", (email,))
+        user = cur.fetchone()
+        cur.close()
+
+        if user:
+            # DIRECTLY redirect to reset page with email (No Verification Mode)
+            flash("User found. Please set a new password.", "success")
+            return redirect(url_for('auth_bp.reset_password_simple', email=email))
+        else:
+            flash("Email not found.", "danger")
+            return redirect(url_for('auth_bp.forgot_password'))
+
+    return render_template('forgot_password.html')
+
+
+@auth_bp.route('/reset_password', methods=['GET', 'POST'])
+def reset_password_simple():
+    """Step 2: Set New Password directly"""
+    email = request.args.get('email') or request.form.get('email')
+    
+    if not email:
+        flash("Invalid request.", "danger")
+        return redirect(url_for('auth_bp.signin'))
+
+    if request.method == 'POST':
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+
+        if password != confirm_password:
+            flash("❌ Passwords do not match.", "danger")
+            return render_template('reset_password.html', email=email)
+
+        hashed_password = generate_password_hash(password)
+
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            UPDATE linkedin_tokens 
+            SET password=%s, updated_by='User_Simple_Reset', updated_date=NOW() 
+            WHERE user_email=%s
+        """, (hashed_password, email))
+        mysql.connection.commit()
+        cur.close()
+
+        flash("✅ Password reset successfully! You can now log in.", "success")
+        return redirect(url_for('auth_bp.signin'))
+
+    return render_template('reset_password.html', email=email)
 
 
 # ================================
@@ -66,36 +191,55 @@ def signup():
         return redirect(url_for('content_bp.generate_text'))
     return render_template('auth.html', page='signup')
 
-
 @auth_bp.route('/signup_post', methods=['POST'])
 def signup_post():
-    name = request.form['name']
-    email = request.form['email']
-    password = request.form['password']
+    name = request.form.get('name', '').strip()
+    # Normalize email: lowercase and strip whitespace for accurate matching
+    email = request.form.get('email', '').strip().lower()
+    password = request.form.get('password', '')
+    
+    if not email or not password:
+        flash("⚠️ All fields are required.", "warning")
+        return redirect(url_for('auth_bp.signup'))
+
     password_hash = generate_password_hash(password)
 
     cur = mysql.connection.cursor()
+    
+    # 1. STRICT CHECK: Does email already exist?
     cur.execute("SELECT id FROM linkedin_tokens WHERE user_email=%s", (email,))
     existing = cur.fetchone()
 
     if existing:
-        flash("⚠️ Email already registered. Please sign in.", "warning")
+        # User already exists, DO NOT allow new signup.
+        flash("⚠️ Email already registered. Please sign in instead.", "warning")
+        cur.close()
         return redirect(url_for('auth_bp.signin'))
 
-    cur.execute("""
-        INSERT INTO linkedin_tokens (user_name, user_email, password, added_by, added_date, updated_by, updated_date)
-        VALUES (%s, %s, %s, 'System', NOW(), 'System', NOW())
-    """, (name, email, password_hash))
-    mysql.connection.commit()
-    user_id = cur.lastrowid
-    cur.close()
+    # 2. Create new account
+    try:
+        cur.execute("""
+            INSERT INTO linkedin_tokens (user_name, user_email, password, added_by, added_date, updated_by, updated_date)
+            VALUES (%s, %s, %s, 'System', NOW(), 'System', NOW())
+        """, (name, email, password_hash))
+        mysql.connection.commit()
+        user_id = cur.lastrowid
+        
+        session['user_id'] = user_id
+        session['user_email'] = email
+        session['linkedin_user'] = name
+        # session['user_pic'] remains None until they link LinkedIn
 
-    session['user_id'] = user_id
-    session['user_email'] = email
-    session['linkedin_user'] = name
-
-    flash("✅ Account created! Please verify your LinkedIn account to access services.", "info")
-    return redirect(url_for('auth_bp.verify_social'))
+        flash("✅ Account created! Please verify your LinkedIn account.", "info")
+        return redirect(url_for('auth_bp.verify_social'))
+        
+    except Exception as e:
+        print(f"Signup Error: {e}")
+        flash("❌ An error occurred during signup. Please try again.", "danger")
+        return redirect(url_for('auth_bp.signup'))
+        
+    finally:
+        cur.close()
 
 
 # ================================
@@ -115,14 +259,14 @@ def verify_social():
         return redirect(url_for('auth_bp.signin'))
 
     cur = mysql.connection.cursor()
-    cur.execute("SELECT user_urn FROM linkedin_tokens WHERE id=%s", (session['user_id'],))
+    cur.execute("SELECT user_urn, user_email FROM linkedin_tokens WHERE id=%s", (session['user_id'],))
     user = cur.fetchone()
     cur.close()
 
     if user and user['user_urn']:
         return redirect(url_for('content_bp.generate_text'))
 
-    return render_template('verify_social.html')
+    return render_template('verify_social.html', email=user['user_email'] if user else '')
 
 
 # ================================
@@ -195,9 +339,10 @@ def linkedin_callback():
         profile_data = profile_response.json()
         user_sub = profile_data.get("sub")
         user_name = profile_data.get("name", "LinkedIn User")
-        user_email = profile_data.get("email", "")
+        linkedin_email = profile_data.get("email", "") 
         user_pic = profile_data.get("picture", "")
 
+        # Save picture to session
         session['user_pic'] = user_pic
 
         if not user_sub:
@@ -206,40 +351,79 @@ def linkedin_callback():
 
         cur = mysql.connection.cursor()
 
-        # Case 1: Existing logged-in user linking LinkedIn
+        # ========================================================
+        # CASE 1: EXISTING LOGGED-IN USER (VERIFYING ACCOUNT)
+        # ========================================================
         if 'user_id' in session:
-            cur.execute("""
-                UPDATE linkedin_tokens
-                SET user_urn=%s, access_token=%s, user_name=%s, user_email=%s, updated_by='System', updated_date=NOW()
-                WHERE id=%s
-            """, (user_sub, access_token, user_name, user_email, session['user_id']))
-            mysql.connection.commit()
+            # Fetch the user's REGISTERED email
+            cur.execute("SELECT user_email FROM linkedin_tokens WHERE id=%s", (session['user_id'],))
+            current_user = cur.fetchone()
             
-            flash("✅ LinkedIn verified successfully!", "success")
+            if current_user:
+                registered_email = current_user['user_email']
+                
+                # --- STRICT SECURITY CHECK ---
+                # Ensure LinkedIn email matches Registered email
+                if registered_email.strip().lower() != linkedin_email.strip().lower():
+                    flash(f"❌ Security Mismatch: Your registered email ({registered_email}) does not match your LinkedIn email ({linkedin_email}). Please log in to the correct LinkedIn account.", "danger")
+                    return redirect(url_for('auth_bp.verify_social'))
 
-        # Case 2: Logging in directly via LinkedIn
+                # If match, update and link (AND SAVE PIC_URL)
+                cur.execute("""
+                    UPDATE linkedin_tokens
+                    SET user_urn=%s, access_token=%s, user_name=%s, pic_url=%s, updated_by='System', updated_date=NOW()
+                    WHERE id=%s
+                """, (user_sub, access_token, user_name, user_pic, session['user_id']))
+                mysql.connection.commit()
+                
+                flash("✅ LinkedIn verified successfully!", "success")
+            else:
+                session.clear()
+                return redirect(url_for('auth_bp.signin'))
+
+        # ========================================================
+        # CASE 2: LOGGING IN VIA LINKEDIN (DIRECTLY)
+        # ========================================================
         else:
+            # 1. Check if this LinkedIn Account (URN) is already linked
             cur.execute("SELECT * FROM linkedin_tokens WHERE user_urn=%s", (user_sub,))
             existing_user = cur.fetchone()
 
             if existing_user:
+                # Account exists and is linked -> Login (UPDATE PIC_URL)
                 cur.execute("""
                     UPDATE linkedin_tokens
-                    SET access_token=%s, user_name=%s, user_email=%s, updated_by='System', updated_date=NOW()
+                    SET access_token=%s, user_name=%s, user_email=%s, pic_url=%s, updated_by='System', updated_date=NOW()
                     WHERE user_urn=%s
-                """, (access_token, user_name, user_email, user_sub))
+                """, (access_token, user_name, linkedin_email, user_pic, user_sub))
                 mysql.connection.commit()
                 user_id = existing_user['id']
                 flash(f"✅ Welcome back, {user_name}!", "success")
             else:
-                cur.execute("""
-                    INSERT INTO linkedin_tokens
-                    (user_urn, access_token, user_name, user_email, added_by, added_date, updated_by, updated_date)
-                    VALUES (%s, %s, %s, %s, 'System', NOW(), 'System', NOW())
-                """, (user_sub, access_token, user_name, user_email))
-                mysql.connection.commit()
-                user_id = cur.lastrowid
-                flash(f"✅ Welcome {user_name}! Account created via LinkedIn.", "success")
+                # 2. Check if the EMAIL exists (User signed up via form but didn't link LinkedIn yet)
+                cur.execute("SELECT * FROM linkedin_tokens WHERE user_email=%s", (linkedin_email,))
+                existing_email_user = cur.fetchone()
+
+                if existing_email_user:
+                    # Account exists with this email -> Link it now (UPDATE PIC_URL)
+                    cur.execute("""
+                        UPDATE linkedin_tokens
+                        SET user_urn=%s, access_token=%s, user_name=%s, pic_url=%s, updated_by='System', updated_date=NOW()
+                        WHERE id=%s
+                    """, (user_sub, access_token, user_name, user_pic, existing_email_user['id']))
+                    mysql.connection.commit()
+                    user_id = existing_email_user['id']
+                    flash(f"✅ Account linked! Welcome back, {user_name}!", "success")
+                else:
+                    # 3. Completely new user -> Create Account (INSERT PIC_URL)
+                    cur.execute("""
+                        INSERT INTO linkedin_tokens
+                        (user_urn, access_token, user_name, user_email, pic_url, added_by, added_date, updated_by, updated_date)
+                        VALUES (%s, %s, %s, %s, %s, 'System', NOW(), 'System', NOW())
+                    """, (user_sub, access_token, user_name, linkedin_email, user_pic))
+                    mysql.connection.commit()
+                    user_id = cur.lastrowid
+                    flash(f"✅ Welcome {user_name}! Account created via LinkedIn.", "success")
 
             session['user_id'] = user_id
 
@@ -249,7 +433,7 @@ def linkedin_callback():
         session['linkedin_token'] = access_token
         session['linkedin_user'] = user_name
         session['linkedin_user_urn'] = user_sub
-        session['user_email'] = user_email
+        session['user_email'] = linkedin_email
 
         return redirect(url_for('content_bp.generate_text'))
 
@@ -320,6 +504,9 @@ def update_profile():
         return redirect(url_for('auth_bp.profile'))
     
     cur = mysql.connection.cursor()
+    
+    # Optional: Prevent changing email if it breaks LinkedIn sync
+    # For now, allowing update but user might need to re-verify if logic gets stricter
     
     if new_password:
         if not current_password:
